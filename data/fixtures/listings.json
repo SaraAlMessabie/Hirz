@@ -74,6 +74,59 @@
   "synthetic": false
  },
  {
+  "brand": "aramex",
+  "name": "Aramex Khalidiya Outlet",
+  "address": "Khalidiya Mall - Ground Floor - Mubarak Bin Mohammed St - in front of LULU Hypermarket - Al Khalidiyah - W9 - Abu Dhabi",
+  "phone": "+971600544000",
+  "website": "aramex.com",
+  "review_count": 114,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "aramex",
+  "name": "Aramex AUH Airport Outlet",
+  "address": "Building # 855 Airport Road - behind Al Jazeera Sports Club - Al Nahyan - Zone 1 - Abu Dhabi",
+  "phone": "+971600544000",
+  "website": "aramex.com",
+  "review_count": 2794,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "emiratespost",
+  "name": "Emirates Post - Al Zahiyah Post Office",
+  "address": "Al Zahiyah - E14 - شارع ١٠ - Abu Dhabi",
+  "phone": "+971600599999",
+  "website": "emiratespost.ae",
+  "review_count": 167,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "note": "listing subtitle: NXN - Al Zahiyah Post Office (formerly Emirates Post)"
+ },
+ {
+  "brand": "emiratespost",
+  "name": "Emirates Post - Hamdan Post Office",
+  "address": "Beside Le Royal Meridien, Zadco Tower - Khalifa Bin Zayed The First St - Al Danah - Zone 1 - Abu Dhabi",
+  "phone": "+971600599999",
+  "website": "emiratespost.ae",
+  "review_count": 167,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "note": "marked Temporarily closed on Google Maps"
+ },
+ {
+  "brand": "emiratespost",
+  "name": "NXN - Abu Dhabi Central",
+  "address": "Murour Rd, Zayed City Beside Gold Souq - Abu Dhabi",
+  "phone": "+971600569696",
+  "website": "",
+  "review_count": 821,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "note": "NXN runs Emirates Post's branch network; no website shown on the listing"
+ },
+ {
   "brand": "adcb",
   "name": "ADCB Customer Care Dubai",
   "address": "Office 1204, Al Moosa Tower 2, Sheikh Zayed Road, Dubai",
