@@ -63,6 +63,7 @@
   .kv span:first-child{color:var(--dim)}
   .takedown a{display:block;padding:6px 0;color:var(--blue);text-decoration:none;font-size:13px}
   .muted{color:var(--dim);padding:18px 15px;font-size:13px}
+  td.link{color:var(--blue);text-decoration:underline;text-underline-offset:2px}
   .advisory{color:var(--dim);font-size:11.5px;padding:10px 15px 0;font-style:italic}
   /* Arabic: the layout mirrors, but domains, scores and hashes stay left-to-right */
   html[dir=rtl] body{font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif}
@@ -130,7 +131,7 @@
     </div>
 
     <div class="panel">
-      <h2 data-t="case.title"></h2>
+      <h2><span data-t="case.title"></span> <span class="muted" style="padding:0;font-weight:400;text-transform:none;letter-spacing:0" data-t="case.hint"></span></h2>
       <div id="detail" class="muted" data-t="case.empty"></div>
     </div>
   </div>
@@ -148,6 +149,8 @@ const API = (new URLSearchParams(location.search).get("api") || (
   : location.port === "8001" ? location.protocol + "//" + location.hostname + ":8000"
   : location.origin)).replace(/\/$/, "");
 const D = { en: {
+ "case.hint": "— click a detection or a report to analyse it",
+ "case.nourl": "That report has no web address to analyse. Reports naming a phone number or an email have no evidence bundle: the bundle is registration, certificate and hosting for one website.",
  "rep.t.website": "Fake website or link",
  "rep.t.phone": "Phone call or SMS",
  "rep.t.listing": "Fake business listing",
@@ -267,6 +270,8 @@ const D = { en: {
  "age5": "3+ years"
 },
   ar: {
+ "case.hint": "— اضغط على اكتشاف أو بلاغ لتحليله",
+ "case.nourl": "هذا البلاغ لا يحتوي على عنوان موقع لتحليله. البلاغات التي تذكر رقم هاتف أو بريداً إلكترونياً لا يوجد لها ملف أدلة: الملف يتكوّن من بيانات التسجيل والشهادة والاستضافة لموقع واحد.",
  "rep.t.website": "موقع أو رابط مزيف",
  "rep.t.phone": "مكالمة أو رسالة نصية",
  "rep.t.listing": "نشاط تجاري مزيف",
@@ -511,21 +516,41 @@ async function loadDetections(){
     : `<tr><td colspan="6" class="muted">${d("det.none")}</td></tr>`;
 }
 
-async function pick(i){
+function pick(i){
   document.querySelectorAll("tbody tr").forEach(t => t.classList.remove("sel"));
   document.getElementById("r"+i)?.classList.add("sel");
-  const r = rows[i]; current = r.domain;
+  return showCase(rows[i].domain);
+}
+
+// Open the case panel for a report in the queue, so a citizen report reaches the
+// same analysis, evidence PDF and takedown routing as anything we found ourselves.
+// Takes the row index, never the URL: the URL is typed by whoever filed the report
+// and has no business being interpolated into an onclick attribute.
+function openReport(i){
+  const r = reports[i];
+  if (!r) return;
+  document.querySelectorAll("tbody tr").forEach(t => t.classList.remove("sel"));
+  document.getElementById("rep" + i)?.classList.add("sel");
+  if (!r.url){
+    const el = document.getElementById("detail");
+    el.className = "muted"; el.textContent = d("case.nourl"); current = null; return;
+  }
+  return showCase(r.url);
+}
+
+async function showCase(target){
+  current = target;
   const el = document.getElementById("detail");
   el.className = "detail";
-  el.innerHTML = `<div class="dom">${esc(r.domain)}</div><div class="muted">${d("case.analysing")}</div>`;
+  el.innerHTML = `<div class="dom">${esc(target)}</div><div class="muted">${d("case.analysing")}</div>`;
 
   let v;
   try{
     v = await (await fetch(API + "/check", {method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({url:r.domain, deep:true})})).json();
+      body: JSON.stringify({url:target, deep:true})})).json();
   }catch(e){
-    el.innerHTML = `<div class="dom">${esc(r.domain)}</div>
+    el.innerHTML = `<div class="dom">${esc(target)}</div>
                     <div class="muted">${d("case.unreach")}</div>`; return;
   }
 
@@ -662,11 +687,13 @@ async function loadReports(){
         ? esc(word("v.", r.auto_verdict)) + (r.auto_score !== "" && r.auto_score != null ? " · " + esc(r.auto_score) : "")
         : d("dash");
       const act = r.status === "pending"
-        ? `<button class="ghost" onclick="setReport('${rid}','confirmed')">${d("rep.confirmed")}</button>
-           <button class="ghost" onclick="setReport('${rid}','rejected')">${d("rep.rejected")}</button>`
+        ? `<button class="ghost" onclick="event.stopPropagation();setReport('${rid}','confirmed')">${d("rep.confirmed")}</button>
+           <button class="ghost" onclick="event.stopPropagation();setReport('${rid}','rejected')">${d("rep.rejected")}</button>`
         : "";
-      return `<tr><td><code>${esc(r.report_id)}</code></td><td>${esc(word("rep.t.", r.type))}</td>
-        <td title="${esc(r.description || "")}">${esc(what)}</td><td>${auto}</td>
+      // every row opens: one without a URL explains why there is no bundle,
+      // which is more use to a reviewer than a row that ignores the click
+      return `<tr id="rep${i}" onclick="openReport(${i})"><td><code>${esc(r.report_id)}</code></td><td>${esc(word("rep.t.", r.type))}</td>
+        <td title="${esc(r.description || "")}"${r.url ? ' class="link"' : ""}>${esc(what)}</td><td>${auto}</td>
         <td>${esc(!r.reporter || r.reporter === "anonymous" ? d("rep.anon") : r.reporter)}</td><td class="muted">${esc((r.created_at || "").slice(0, 16))}</td>
         <td>${esc(statusWord(r.status))}</td><td>${act}</td></tr>`;
     }).join("");
