@@ -580,6 +580,32 @@ EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 URGENCY = {"urgent", "immediately", "suspended", "verify", "expire", "expired",
            "final notice", "within 24 hours", "act now", "blocked", "penalty",
            "customs", "clearance", "unpaid", "reactivate", "confirm now"}
+# /scan-message answers in the language the caller asks for. The reason codes
+# the other endpoints return are translated in the client; this endpoint builds
+# free text, so it carries both languages itself.
+MSG_TEXT = {
+    "urgency":           {"en": "Pressure language: {x}",
+                          "ar": "أسلوب استعجال: {x}"},
+    "unreachable":       {"en": "The links in this message could not be reached",
+                          "ar": "تعذّر الوصول إلى الروابط في هذه الرسالة"},
+    "known_bad":         {"en": "{x} is already flagged",
+                          "ar": "{x} مُبلّغ عنه مسبقاً"},
+    "suspicious_number": {"en": "{x}", "ar": "{x}"},
+    "rec_no_click":      {"en": "Do not click the links in this message.",
+                          "ar": "لا تضغط على الروابط في هذه الرسالة."},
+    "rec_own_number":    {"en": "Contact the organisation using a number from their official website, not one in the message.",
+                          "ar": "تواصل مع الجهة عبر رقم من موقعها الرسمي، وليس رقماً ورد في الرسالة."},
+    "rec_no_callback":   {"en": "Do not call back the number in this message.",
+                          "ar": "لا تتصل بالرقم الوارد في هذه الرسالة."},
+    "rec_nothing":       {"en": "We found nothing to check in this message. That does not mean it is safe.",
+                          "ar": "لم نجد ما يمكن التحقق منه في هذه الرسالة. وهذا لا يعني أنها آمنة."},
+}
+
+
+def msg_text(code, lang, x=""):
+    return MSG_TEXT[code][lang if lang in ("en", "ar") else "en"].replace("{x}", str(x))
+
+
 ARABIC_URGENCY = {"عاجل", "تحقق", "تعليق", "الحساب", "تأكيد", "الجمارك", "رسوم"}
 
 
@@ -596,6 +622,9 @@ def scan_message(body: MessageIn):
     if not text:
         raise HTTPException(400, "no text given")
 
+    has_arabic = any("\u0600" <= c <= "\u06ff" for c in text)
+    lang = body.lang if body.lang in ("en", "ar") else ("ar" if has_arabic else "en")
+
     urls   = list(dict.fromkeys(URL_RE.findall(text)))[:5]
     phones = list(dict.fromkeys(m.strip() for m in PHONE_RE.findall(text)))[:5]
     emails = list(dict.fromkeys(EMAIL_RE.findall(text)))[:5]
@@ -603,8 +632,6 @@ def scan_message(body: MessageIn):
     low = text.lower()
     hits = sorted({k for k in URGENCY if k in low} |
                   {k for k in ARABIC_URGENCY if k in text})
-    has_arabic = any("\u0600" <= c <= "\u06ff" for c in text)
-
     url_results, worst, worst_status = [], 0, "NO_MATCH"
     for u in urls:
         try:
@@ -613,7 +640,8 @@ def scan_message(body: MessageIn):
             continue
         url_results.append({"url": u, "status": v.get("status"),
                             "score": v.get("score"),
-                            "reasons": [x["text"] for x in (v.get("reasons") or [])[:3]]})
+                            "reasons": [x["text"] for x in (v.get("reasons") or [])[:3]],
+                            "reason_codes": [x.get("code", "") for x in (v.get("reasons") or [])[:3]]})
         if (v.get("score") or 0) > worst:
             worst, worst_status = v["score"], v.get("status", worst_status)
 
@@ -625,24 +653,27 @@ def scan_message(body: MessageIn):
             continue
         phone_results.append({"number": p, "verdict": v.get("verdict"),
                               "score": v.get("score"),
-                              "reasons": [x["text"] for x in (v.get("reasons") or [])[:2]]})
+                              "reasons": [x["text"] for x in (v.get("reasons") or [])[:2]],
+                              "reason_codes": [x.get("code", "") for x in (v.get("reasons") or [])[:2]]})
         if (v.get("score") or 0) > worst:
             worst = v["score"]
 
     indicators = []
     if hits:
         indicators.append({"type": "urgency",
-                           "description": "Pressure language: " + ", ".join(hits[:5])})
+                           "description": msg_text("urgency", lang, ", ".join(hits[:5]))})
     if urls and not url_results:
         indicators.append({"type": "unreachable",
-                           "description": "The links in this message could not be reached"})
+                           "description": msg_text("unreachable", lang)})
     for r in url_results:
         if r["status"] in ("CONFIRMED", "REPORTED"):
             indicators.append({"type": "known_bad",
-                               "description": f"{r['url']} is already flagged"})
+                               "description": msg_text("known_bad", lang, r["url"])})
     for r in phone_results:
         if r["verdict"] in ("malicious", "suspicious"):
             indicators.append({"type": "suspicious_number",
+                               "subject": r["number"],
+                               "reason_code": (r["reason_codes"][0] if r.get("reason_codes") else ""),
                                "description": f"{r['number']}: " +
                                               (r["reasons"][0] if r["reasons"] else "unusual for a helpline")})
 
@@ -655,17 +686,16 @@ def scan_message(body: MessageIn):
     else:
         risk = "unknown"
 
-    recs = ["Do not click the links in this message.",
-            "Contact the organisation using a number from their official website, "
-            "not one in the message."]
+    recs = [msg_text("rec_no_click", lang), msg_text("rec_own_number", lang)]
     if phone_results:
-        recs.append("Do not call back the number in this message.")
+        recs.append(msg_text("rec_no_callback", lang))
     if risk == "unknown":
-        recs = ["We found nothing to check in this message. "
-                "That does not mean it is safe."]
+        recs = [msg_text("rec_nothing", lang)]
 
     return {"risk_level": risk,
             "language": "ar" if has_arabic else "en",
+            "answered_in": lang,
+            "counts": {"urls": len(urls), "phones": len(phones), "emails": len(emails)},
             "summary": (f"{len(urls)} link(s), {len(phones)} number(s), "
                         f"{len(emails)} address(es) found"),
             "indicators": indicators,

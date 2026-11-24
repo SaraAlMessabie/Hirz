@@ -15,13 +15,21 @@ Serves clients/index.html and these endpoints (the app calls them):
   GET  /api/listings[?refresh=1]   the fixture listings, from data/listing_hits.csv
                                    (rescanned when missing or refresh=1)
   POST /api/evidence               {"url"} -> bilingual evidence PDF (evidence.py)
+  POST /api/scan-message           {"text","lang"} -> SMS/WhatsApp scan (links, numbers, emails)
+  POST /api/report                 a citizen files a report -> reference number
+  GET  /api/reports[?status=]      the investigator queue
+  POST /api/report-status          investigator moves a report through the queue
+  plus /api/stats, /api/detections, /api/campaigns, /api/confirmed, /api/official,
+       /api/review, /api/reviews   (allowlisted passthrough to api.py)
+
+The investigator console is served by api.py on port 8000, not by this file.
 
 Env: HIRZ_API (default http://127.0.0.1:8000), BRAVE_API_KEY, NOMINATIM_EMAIL (optional)
 """
 import csv, os, pathlib
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -60,6 +68,16 @@ class ListingIn(BaseModel):
 def _proxy(path, payload):
     try:
         r = httpx.post(API + path, json=payload, timeout=60)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        raise HTTPException(502, f"Could not reach the checker API at {API}. Start it with: "
+                                 "python -m uvicorn api:app --port 8000")
+
+
+def _proxy_get(path, params=None):
+    try:
+        r = httpx.get(API + path, params=params or {}, timeout=60)
         r.raise_for_status()
         return r.json()
     except Exception:
@@ -127,6 +145,26 @@ def make_evidence(body: UrlIn):
     return Response(data, media_type="application/pdf", headers={
         "Content-Disposition": f'attachment; filename="hirz-evidence-{eid}.pdf"',
         "X-Evidence-Id": eid, "X-Bundle-SHA256": b["bundle_sha256"]})
+
+
+# Everything else api.py serves, reachable through this one address.
+# Declared after the routes above, so those keep priority.
+PASS_POST = {"report", "report-status", "scan-message", "review", "official"}
+PASS_GET = {"reports", "reviews", "stats", "detections", "campaigns", "confirmed", "official"}
+
+
+@app.post("/api/{path:path}")
+def pass_post(path: str, body: dict = Body(default={})):
+    if path not in PASS_POST:
+        raise HTTPException(404, f"No such endpoint: /api/{path}")
+    return _proxy("/" + path, body)
+
+
+@app.get("/api/{path:path}")
+def pass_get(path: str, request: Request):
+    if path not in PASS_GET:
+        raise HTTPException(404, f"No such endpoint: /api/{path}")
+    return _proxy_get("/" + path, dict(request.query_params))
 
 
 @app.get("/")

@@ -55,8 +55,15 @@
   .lead { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
 
   form { display: flex; flex-direction: column; gap: 10px; }
+  form[hidden] { display: none; }
   label.f { font-size: 13px; color: var(--muted); margin-bottom: -6px; }
-  input, select {
+  textarea {
+  font: inherit; width: 100%; padding: 13px 15px; margin-bottom: 14px; min-height: 120px;
+  resize: vertical; background:#fff; border:1.5px solid #d9e5ee; color:#18384f; border-radius:14px;
+  box-shadow:0 2px 7px #22516f05; line-height:1.55;
+}
+textarea:focus { outline:none; border-color:#1699d1; box-shadow:0 0 0 3px #1699d126; }
+input, select {
     width: 100%; padding: 13px 14px; font: inherit; font-size: 16px; color: var(--text);
     background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; outline: none;
   }
@@ -226,7 +233,7 @@ ul.reasons li { background:#f8fafc; border:1px solid #e4ebf1; }
 .chip.grey { background:var(--grey-bg); color:var(--grey); }
 .badge { color:#6d4ca0; border-color:#d8ccea; }
 nav.tabs { background:#fffffff5; border-top:1px solid #dce6ef; box-shadow:0 -5px 24px #0a3e5e0c; }
-nav.tabs .inner { max-width:440px; grid-template-columns:repeat(4,1fr); }
+nav.tabs .inner { max-width:460px; grid-template-columns:repeat(5,1fr); }
 nav.tabs button { background:transparent; box-shadow:none; color:#71899a; min-height:65px; padding:10px 2px 8px; font-size:11.5px; }
 nav.tabs button.on { color:#147eb8; box-shadow:inset 0 3px 0 #1699d1; background:#eef8fe; }
 nav.tabs button svg { width:22px; height:22px; }
@@ -371,7 +378,7 @@ html[dir=rtl] .action-tile:hover .tile-go {transform:translate(-2px,-2px)}
 .panel:not(#p-home)>h1 {position:relative;margin-top:14px;padding-inline-start:15px}
 .panel:not(#p-home)>h1::before {content:"";position:absolute;inset-inline-start:0;top:5px;width:5px;height:26px;border-radius:8px;background:linear-gradient(#42c4d8,#1f82bf)}
 .panel:not(#p-home)>.lead {margin-bottom:20px}
-#p-link form,#p-number form,#l-form form {background:#fff;border:1px solid #e1ecf5;border-radius:22px;padding:18px;box-shadow:0 7px 22px #25537d0e}
+#p-link form,#p-number form,#l-form form,#p-message form,#p-report form {background:#fff;border:1px solid #e1ecf5;border-radius:22px;padding:18px;box-shadow:0 7px 22px #25537d0e}
 form button[type=submit] {margin-top:5px;box-shadow:0 7px 15px #196ba923}
 input,select {border-radius:13px;transition:border-color .2s ease,box-shadow .2s ease;min-height:52px}
 input:focus,select:focus {border-color:#3b9dd2;box-shadow:0 0 0 4px #a5e1fc54}
@@ -387,7 +394,7 @@ ul.reasons li:nth-child(2) {animation-delay:.08s}ul.reasons li:nth-child(3){anim
 .item:hover {transform:translateY(-2px);box-shadow:0 9px 22px #2a65801a}
 /* Elevated navigation with large, accessible touch targets */
 nav.tabs {background:#fffffff5;backdrop-filter:blur(14px);border-top:1px solid #e5edf5;box-shadow:0 -7px 24px #20578112;z-index:7;padding-bottom:env(safe-area-inset-bottom)}
-nav.tabs .inner {max-width:440px;grid-template-columns:repeat(4,1fr);gap:5px;padding:7px 12px 5px}
+nav.tabs .inner {max-width:470px;grid-template-columns:repeat(5,1fr);gap:3px;padding:7px 9px 5px}
 nav.tabs button {min-height:58px;padding:8px 2px;border-radius:15px;background:transparent;color:#7794aa;box-shadow:none;gap:4px;font-size:11px;font-weight:760}
 nav.tabs button.on {background:linear-gradient(180deg,#e7f6ff,#f2faff);box-shadow:none;color:#1177b5}
 nav.tabs button svg {width:22px;height:22px;transition:transform .24s cubic-bezier(.2,.9,.2,1)}
@@ -495,6 +502,14 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
           <span class="tile-icon tile-listing" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
           <strong data-t="home.listing"></strong><small data-t="home.listing.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
         </button>
+        <button type="button" class="action-tile" data-go="message">
+          <span class="tile-icon tile-link" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <strong data-t="home.message"></strong><small data-t="home.message.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
+        </button>
+        <button type="button" class="action-tile" data-go="report">
+          <span class="tile-icon tile-listing" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 1-1h10l-1.5 4L15 11H5"/><path d="M4 22h16"/></svg></span>
+          <strong data-t="home.report"></strong><small data-t="home.report.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
+        </button>
         <button type="button" class="action-tile action-help" id="tipButton">
           <span class="tile-icon tile-tip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>
           <strong data-t="home.tips"></strong><small data-t="home.tips.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
@@ -535,6 +550,7 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
               <button id="evBtn" type="button"></button>
               <div id="evMsg" class="msg"></div>
             </div>
+            <button id="lReport" type="button" class="ghost" data-t="report.cta"></button>
             <div id="proceed" class="proceed">
               <button id="proceedBtn" type="button" class="ghost" data-t="proceed"></button>
               <div id="warn" class="warn"><span data-t="warn"></span>
@@ -614,6 +630,66 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
           <span data-t="lst.note2"></span></p>
       </div>
     </section>
+
+    <!-- ============ MESSAGE ============ -->
+    <section id="p-message" class="panel">
+      <h1 data-t="msg.h1"></h1>
+      <p class="lead" data-t="msg.lead"></p>
+      <form id="f-message" autocomplete="off">
+        <label class="f" for="mtext" data-t="msg.label"></label>
+        <textarea id="mtext" data-t-ph="msg.ph" required></textarea>
+        <button type="submit" data-t="msg.btn"></button>
+      </form>
+      <div class="spinner"><i></i><span data-t="msg.spin"></span></div>
+      <div class="error" role="alert"></div>
+      <div class="result" hidden>
+        <div class="verdict"><div class="word"></div><div class="sub"></div></div>
+        <div class="body">
+          <div class="host"></div>
+          <h2 data-t="msg.ind"></h2>
+          <ul class="reasons"></ul>
+          <div id="m-items"></div>
+          <h2 data-t="msg.rec"></h2>
+          <ul class="reasons recs"></ul>
+          <div class="actions"><button id="mReport" type="button" class="ghost" data-t="report.cta"></button></div>
+          <div class="note" data-t="disclaimer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ REPORT ============ -->
+    <section id="p-report" class="panel">
+      <h1 data-t="rep.h1"></h1>
+      <p class="lead" data-t="rep.lead"></p>
+      <form id="f-report" autocomplete="off">
+        <label class="f" for="rtype" data-t="rep.type"></label>
+        <select id="rtype">
+          <option value="website" data-t="rep.t.link"></option>
+          <option value="phone" data-t="rep.t.phone"></option>
+          <option value="listing" data-t="rep.t.listing"></option>
+          <option value="other" data-t="rep.t.other"></option>
+        </select>
+        <label class="f" for="rident" data-t="rep.ident"></label>
+        <input id="rident" type="text" dir="ltr" data-t-ph="rep.ident.ph">
+        <label class="f" for="rwhat" data-t="rep.what"></label>
+        <textarea id="rwhat" data-t-ph="rep.what.ph"></textarea>
+        <label class="f" for="rwho" data-t="rep.who"></label>
+        <input id="rwho" type="text" data-t-ph="rep.who.ph">
+        <button type="submit" data-t="rep.btn"></button>
+      </form>
+      <div class="spinner"><i></i><span data-t="rep.spin"></span></div>
+      <div class="error" role="alert"></div>
+      <div class="result" hidden>
+        <div class="verdict"><div class="word"></div><div class="sub"></div></div>
+        <div class="body">
+          <div class="host"></div>
+          <h2 data-t="rep.auto"></h2>
+          <ul class="reasons"></ul>
+          <div class="actions"><button id="rAgain" type="button" class="ghost" data-t="rep.another"></button></div>
+          <div class="note" data-t="disclaimer"></div>
+        </div>
+      </div>
+    </section>
   </main>
   <footer id="foot"></footer>
 </div>
@@ -628,6 +704,8 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span data-t="tab.number"></span></button>
   <button id="t-listing" type="button" aria-controls="p-listing">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span data-t="tab.listing"></span></button>
+  <button id="t-message" type="button" aria-controls="p-message">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span data-t="tab.message"></span></button>
 </div></nav>
 
 <script>
@@ -637,6 +715,31 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
 // =====================================================================
 const STR = {
   en: {
+    "tab.message": "Message",
+    "home.message": "Check a message", "home.message.desc": "Paste an SMS or WhatsApp text",
+    "home.report": "Report a scam", "home.report.desc": "Send it to the investigation team",
+    "msg.h1": "Check a message", "msg.lead": "Paste the whole message. We pull out every link, number and address, and check each one.",
+    "msg.label": "The message", "msg.ph": "Paste the SMS or WhatsApp message here",
+    "msg.btn": "Check the message", "msg.spin": "Reading the message and checking what is inside it…",
+    "msg.found": "{l} link(s), {n} number(s), {e} address(es) found",
+    "msg.ind": "What stood out", "msg.rec": "What to do",
+    "msg.urls": "Links in this message", "msg.phones": "Numbers in this message", "msg.emails": "Addresses in this message",
+    "v.link.official": ["Official website", "This address belongs to the organisation itself, on a verified government or brand domain."],
+    "v.msg.high": ["Dangerous", "This message carries a link or number we already know to be bad."],
+    "v.msg.medium": ["Suspicious", "Parts of this message do not add up. Treat it with care."],
+    "v.msg.low": ["Nothing confirmed", "We found no known scam here. That does not make it safe."],
+    "v.msg.unknown": ["Nothing to check", "No link, number or address in this message."],
+    "rep.h1": "Report a scam", "rep.lead": "Your report goes to the investigation queue with the evidence we can gather automatically.",
+    "rep.type": "What kind of scam?", "rep.t.link": "Fake website or link", "rep.t.phone": "Phone call or SMS",
+    "rep.t.listing": "Fake business listing", "rep.t.other": "Something else",
+    "rep.ident": "Link, number or email address", "rep.ident.ph": "example.com · 050 000 1234 · name@example.com",
+    "rep.what": "What happened?", "rep.what.ph": "Tell us what you received and what it asked you to do.",
+    "rep.who": "Your name or contact (optional)", "rep.who.ph": "Leave blank to report anonymously",
+    "rep.btn": "Send the report", "rep.spin": "Sending the report and checking what you gave us…",
+    "rep.done": "Report received", "rep.done.sub": "An investigator will review it.",
+    "rep.id": "Your reference number", "rep.auto": "Our automatic check", "rep.another": "Report something else",
+    "rep.err.empty": "Add a link, a number, an email address or a description.",
+    "report.cta": "Report this to the investigation team",
     "hero.title": "Smart protection, made simple", "tab.home": "Home",
     "home.eyebrow": "WELCOME TO HIRZ", "home.title": "How can we help you today?",
     "home.lead": "A simple way to check suspicious links, calls and online listings.",
@@ -697,6 +800,31 @@ const STR = {
     "err.http": "The server returned an error (HTTP {c}).", "foot": "Hirz · Your safeguard against scams",
   },
   ar: {
+    "tab.message": "رسالة",
+    "home.message": "تحقق من رسالة", "home.message.desc": "الصق رسالة نصية أو واتساب",
+    "home.report": "أبلِغ عن احتيال", "home.report.desc": "أرسلها إلى فريق التحقيق",
+    "msg.h1": "تحقق من رسالة", "msg.lead": "الصق الرسالة كاملة. نستخرج كل رابط ورقم وبريد ونتحقق من كل واحد.",
+    "msg.label": "الرسالة", "msg.ph": "الصق الرسالة النصية أو رسالة واتساب هنا",
+    "msg.btn": "تحقق من الرسالة", "msg.spin": "نقرأ الرسالة ونتحقق من محتواها…",
+    "msg.found": "عثرنا على {l} رابط و{n} رقم و{e} بريد إلكتروني",
+    "msg.ind": "ما لفت الانتباه", "msg.rec": "ما ينبغي فعله",
+    "msg.urls": "الروابط في الرسالة", "msg.phones": "الأرقام في الرسالة", "msg.emails": "عناوين البريد في الرسالة",
+    "v.link.official": ["موقع رسمي", "هذا العنوان يخص الجهة نفسها، على نطاق حكومي أو مؤسسي موثّق."],
+    "v.msg.high": ["خطيرة", "تحتوي هذه الرسالة على رابط أو رقم نعرف أنه ضار."],
+    "v.msg.medium": ["مشبوهة", "بعض ما في هذه الرسالة غير متسق. تعامل معها بحذر."],
+    "v.msg.low": ["لا شيء مؤكد", "لم نجد احتيالاً معروفاً هنا. وهذا لا يعني أنها آمنة."],
+    "v.msg.unknown": ["لا يوجد ما يمكن التحقق منه", "لا يوجد رابط أو رقم أو بريد في هذه الرسالة."],
+    "rep.h1": "أبلِغ عن احتيال", "rep.lead": "يصل تقريرك إلى قائمة التحقيق مع الأدلة التي نجمعها تلقائياً.",
+    "rep.type": "ما نوع الاحتيال؟", "rep.t.link": "موقع أو رابط مزيف", "rep.t.phone": "مكالمة أو رسالة نصية",
+    "rep.t.listing": "نشاط تجاري مزيف", "rep.t.other": "شيء آخر",
+    "rep.ident": "الرابط أو الرقم أو البريد الإلكتروني", "rep.ident.ph": "example.com · 050 000 1234 · name@example.com",
+    "rep.what": "ماذا حدث؟", "rep.what.ph": "أخبرنا بما وصلك وبما طُلب منك.",
+    "rep.who": "اسمك أو وسيلة التواصل (اختياري)", "rep.who.ph": "اتركه فارغاً للإبلاغ دون ذكر الاسم",
+    "rep.btn": "أرسل التقرير", "rep.spin": "نرسل التقرير ونتحقق من البيانات…",
+    "rep.done": "تم استلام التقرير", "rep.done.sub": "سيقوم محقق بمراجعته.",
+    "rep.id": "رقمك المرجعي", "rep.auto": "تحققنا التلقائي", "rep.another": "أبلِغ عن شيء آخر",
+    "rep.err.empty": "أضف رابطاً أو رقماً أو بريداً إلكترونياً أو وصفاً.",
+    "report.cta": "أبلِغ فريق التحقيق عن هذا",
     "hero.title": "حمايتك أسهل مع حرز", "tab.home": "الرئيسية",
     "home.eyebrow": "أهلاً بك في حرز", "home.title": "كيف نقدر نساعدك اليوم؟",
     "home.lead": "افحص الروابط والأرقام والإعلانات المشبوهة بسهولة ووضوح.",
@@ -904,13 +1032,16 @@ const apiReasons = (reasons, brand) => (reasons || []).map((r) => ({
 }));
 
 // ---------- tabs
-const TABS = ["home", "link", "number", "listing"];
+const TABS = ["home", "link", "number", "listing", "message", "report"];
 function showTab(name) {
-  TABS.forEach((x) => { $("t-" + x).classList.toggle("on", x === name); $("p-" + x).classList.toggle("on", x === name); });
+  TABS.forEach((x) => {                          // "report" has no tab button; it is reached from home
+    const b = $("t-" + x); if (b) b.classList.toggle("on", x === name);
+    $("p-" + x).classList.toggle("on", x === name);
+  });
   window.scrollTo({ top: 0 });
   showBanner();
 }
-TABS.forEach((x) => $("t-" + x).addEventListener("click", () => showTab(x)));
+TABS.forEach((x) => $("t-" + x)?.addEventListener("click", () => showTab(x)));
 document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.go)));
 $("tipButton").addEventListener("click", () => $("tipCard").scrollIntoView({ behavior: "smooth", block: "center" }));
 $("lang").addEventListener("click", () => { LANG = LANG === "ar" ? "en" : "ar"; try { localStorage.setItem("hirz.lang", LANG); } catch (_) {} applyLang(); });
@@ -926,8 +1057,10 @@ function resetEvidence(hide = true) {
 }
 function renderLink(scroll) {
   if (!linkData) return;
-  const d = linkData, key = ["malicious", "suspicious", "clean"].includes(d.verdict) ? d.verdict : "unknown";
-  const tone = { malicious: "red", suspicious: "amber", clean: "blue", unknown: "grey" }[key];
+  const d = linkData;
+  const key = d.status === "OFFICIAL" || (d.reasons || []).some((r) => r.code === "official") ? "official"
+    : ["malicious", "suspicious", "clean"].includes(d.verdict) ? d.verdict : "unknown";
+  const tone = { official: "green", malicious: "red", suspicious: "amber", clean: "blue", unknown: "grey" }[key];
   const [word, sub] = t("v.link." + key);
   const card = within(pLink, ".result");
   verdictBlock(card, tone, word, sub, d.score);
@@ -1126,7 +1259,115 @@ async function loadDemo(refresh) {
 }
 $("rescan").addEventListener("click", () => loadDemo(true));
 
-function renderAll() { renderLink(false); renderNumber(false); renderListing(false); renderDemo(); }
+
+// ---------- MESSAGE
+const pMsg = $("p-message");
+let msgData = null;
+const MTONE = { high: "red", medium: "amber", low: "blue", unknown: "grey" };
+
+function itemRow(head, lines) {
+  const d = document.createElement("div"); d.className = "signals";
+  const h = document.createElement("b"); h.textContent = head; h.style.display = "block"; h.dir = "ltr";
+  d.append(h);
+  for (const ln of lines) { const s = document.createElement("small"); s.style.display = "block"; s.textContent = ln; d.append(s); }
+  return d;
+}
+function renderMsg(scroll) {
+  if (!msgData) return;
+  const d = msgData, card = within(pMsg, ".result");
+  const key = ["high", "medium", "low"].includes(d.risk_level) ? d.risk_level : "unknown";
+  const [word, sub] = t("v.msg." + key);
+  verdictBlock(card, MTONE[key], word, sub, NaN);
+  const c = d.counts;
+  within(card, ".host").textContent = c
+    ? t("msg.found", { l: c.urls, n: c.phones, e: c.emails }) : (d.summary || "");
+  const indText = (i) => LANG === "ar" && i.reason_code && REASON_AR[i.reason_code]
+    ? (i.subject ? i.subject + ": " : "") + REASON_AR[i.reason_code] : i.description;
+  fillReasons(within(card, ".reasons"),
+    (d.indicators || []).map((i) => ({ kind: "risk", text: indText(i) })));
+
+  const box = $("m-items"); box.innerHTML = "";
+  const lines = (it) => (it.reasons || []).map((text, k) => {
+    const code = (it.reason_codes || [])[k];
+    return LANG === "ar" && code && REASON_AR[code] ? REASON_AR[code] : text;
+  });
+  if ((d.urls || []).length) {
+    const h = document.createElement("h2"); h.textContent = t("msg.urls"); box.append(h);
+    for (const u of d.urls) box.append(itemRow(iso(u.url) + "  —  " + (u.status || "") + " " + (u.score ?? "") + "/100", lines(u)));
+  }
+  if ((d.phone_numbers || []).length) {
+    const h = document.createElement("h2"); h.textContent = t("msg.phones"); box.append(h);
+    for (const n of d.phone_numbers) box.append(itemRow(iso(n.number) + "  —  " + (n.verdict || ""), lines(n)));
+  }
+  if ((d.email_addresses || []).length) {
+    const h = document.createElement("h2"); h.textContent = t("msg.emails"); box.append(h);
+    box.append(itemRow(d.email_addresses.map(iso).join("  ·  "), []));
+  }
+  fillReasons(within(card, ".recs"), (d.recommendations || []).map((r) => ({ kind: "neutral", text: r })));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-message").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = $("mtext").value.trim(); if (!text) return;
+  msgData = null; clearOut(pMsg); busy(pMsg, true);
+  try { msgData = await (await post("/api/scan-message", { text, lang: LANG })).json(); renderMsg(true); }
+  catch (err) { showError(pMsg, errText(err)); }
+  finally { busy(pMsg, false); }
+});
+$("mReport").addEventListener("click", () => {
+  const u = ((msgData && (msgData.urls || [])[0]) || {}).url || "";
+  const n = ((msgData && (msgData.phone_numbers || [])[0]) || {}).number || "";
+  prefillReport(u ? "website" : n ? "phone" : "other", u || n, $("mtext").value.trim());
+});
+
+// ---------- REPORT
+const pRep = $("p-report");
+let repData = null;
+function prefillReport(type, ident, what) {
+  $("f-report").hidden = false;
+  $("rtype").value = type; $("rident").value = ident || ""; $("rwhat").value = what || "";
+  repData = null; clearOut(pRep); showTab("report");
+}
+function identFields(v) {
+  const x = (v || "").trim();
+  if (!x) return {};
+  if (x.includes("@") && !/^https?:/i.test(x)) return { email: x };
+  if (/^[+()\d\s-]{6,}$/.test(x)) return { phone: x };
+  return { url: x };
+}
+function renderReport(scroll) {
+  if (!repData) return;
+  const d = repData, card = within(pRep, ".result");
+  verdictBlock(card, "green", t("rep.done"), t("rep.done.sub"), NaN);
+  within(card, ".host").textContent = t("rep.id") + ": " + iso(d.report_id || "");
+  const items = [];
+  if (d.auto_verdict) items.push({ kind: "risk", text: d.auto_verdict + (d.auto_score !== "" && d.auto_score != null ? " · " + d.auto_score + "/100" : "") });
+  if (d.message) items.push({ kind: "neutral", text: d.message });
+  fillReasons(within(card, ".reasons"), items);
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-report").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const ident = identFields($("rident").value), what = $("rwhat").value.trim();
+  if (!Object.keys(ident).length && !what) { showError(pRep, t("rep.err.empty")); return; }
+  repData = null; clearOut(pRep); busy(pRep, true);
+  try {
+    repData = await (await post("/api/report", {
+      type: $("rtype").value, description: what,
+      reporter: $("rwho").value.trim() || "anonymous", ...ident,
+    })).json();
+    $("f-report").hidden = true; renderReport(true); toast(t("rep.done"));
+  } catch (err) { showError(pRep, errText(err)); }
+  finally { busy(pRep, false); }
+});
+$("rAgain").addEventListener("click", () => {
+  $("f-report").reset(); $("f-report").hidden = false; repData = null; clearOut(pRep); window.scrollTo({ top: 0 });
+});
+$("lReport").addEventListener("click", () => prefillReport("website", lastUrl, ""));
+
+function renderAll() { renderLink(false); renderNumber(false); renderListing(false); renderDemo(); renderMsg(false); renderReport(false); }
 
 // ---------- start
 (async () => {
