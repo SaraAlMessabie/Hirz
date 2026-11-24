@@ -1,0 +1,7 @@
+[
+  {"brand": "adcb", "name": "ADCB Customer Care Dubai", "address": "Office 1204, Al Moosa Tower 2, Sheikh Zayed Road, Dubai", "phone": "+971500001234", "website": "", "review_count": 3, "source": "synthetic", "synthetic": true},
+  {"brand": "emiratesnbd", "name": "Emirates NBD Card Services Helpdesk", "address": "Shop 7, Al Nahda 2, Dubai", "phone": "+971500005678", "website": "https://enbd-card-help.example", "review_count": 1, "source": "synthetic", "synthetic": true},
+  {"brand": "aramex", "name": "Aramex Customer Service 24/7", "address": "Building 12, Al Qusais Industrial Area 4, Dubai", "phone": "+971500002468", "website": "", "review_count": 0, "source": "synthetic", "synthetic": true},
+  {"brand": "emiratespost", "name": "Emirates Post Parcel Release Office", "address": "Warehouse 3, Ras Al Khor Industrial Area 2, Dubai", "phone": "+971500001357", "website": "https://emiratespost-release.example", "review_count": 2, "source": "synthetic", "synthetic": true},
+  {"brand": "tamm", "name": "TAMM Fines Payment Centre", "address": "Office 5, Hamdan Street, Abu Dhabi", "phone": "+971500009876", "website": "", "review_count": 4, "source": "synthetic", "synthetic": true}
+]
