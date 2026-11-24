@@ -5,6 +5,19 @@ investigator can act on.**
 
 Built for the ScamShield AI Hackathon · 42 Abu Dhabi × Abu Dhabi Police.
 
+### Try it
+
+| | |
+|---|---|
+| **Citizen app** | https://hirz-app.onrender.com |
+| **Investigator console** | https://hirz-api.onrender.com |
+
+Both run on Render's free tier, which spins a service down after 15 minutes
+idle. **The first request can take up to a minute** while it wakes — open the
+console link first, let it load, then the app. Everything after that is quick.
+
+Running it locally is faster and is covered in [Build and run](#build-and-run).
+
 ---
 
 ## The problem
