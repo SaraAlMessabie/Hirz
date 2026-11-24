@@ -2,7 +2,7 @@
 Request-time enrichment.
   rdap_features() -> the 4 fields the model was trained on
   tls_facts()     -> certificate rules (NOT model features)
-  page_facts()    -> HTML rules (NOT model features)
+  page_facts()    -> HTML rules, hotlinks, reference similarity, page text
 """
 import json, pathlib, socket, ssl
 from datetime import datetime, timezone
@@ -11,15 +11,45 @@ from urllib.parse import urlparse
 import httpx, tldextract
 from bs4 import BeautifulSoup
 
+try:
+    from reference_pages import fingerprint, similarity
+    HAVE_REFS = True
+except Exception:
+    HAVE_REFS = False
+
 CACHE = pathlib.Path("cache/rdap"); CACHE.mkdir(parents=True, exist_ok=True)
 UA = {"User-Agent": "Mozilla/5.0 (compatible; scam-detect-research/0.1)",
       "Accept": "application/rdap+json"}
+BROWSER_UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"}
 
 FREE_CA = ("let's encrypt", "zerossl", "google trust", "buypass", "actalis")
 GATEWAYS = ("network.ae", "telr.com", "paytabs.com", "payfort.com",
             "amazonpaymentservices.com", "checkout.com", "magnati.com",
             "stripe.com", "adyen.com", "ngenius-payments.com")
 
+def reg_of(host):
+    e = tldextract.extract(host or "")
+    return f"{e.domain}.{e.suffix}" if e.domain and e.suffix else (host or "")
+
+# ---------------------------------------------------------------- references
+_REFS, _REF_DOMAINS = None, None
+
+def references():
+    global _REFS, _REF_DOMAINS
+    if _REFS is None:
+        p = pathlib.Path("data/references.json")
+        _REFS = json.loads(p.read_text("utf-8")) if (HAVE_REFS and p.exists()) else {}
+        _REF_DOMAINS = {}
+        for brand, fps in _REFS.items():
+            doms = set()
+            for fp in fps:
+                h = urlparse(fp.get("url", "")).hostname or ""
+                if h: doms.add(reg_of(h))
+            _REF_DOMAINS[brand] = doms
+    return _REFS, _REF_DOMAINS
+
+# ---------------------------------------------------------------- rdap
 _BOOT = None
 def bootstrap():
     global _BOOT
@@ -35,10 +65,6 @@ def bootstrap():
             pass
     return _BOOT
 
-def reg_of(host):
-    e = tldextract.extract(host)
-    return f"{e.domain}.{e.suffix}" if e.domain and e.suffix else host
-
 def _days(iso):
     try:
         return (datetime.now(timezone.utc)
@@ -53,8 +79,9 @@ def age_bucket(days):
     return 5
 
 def rdap_features(domain):
-    """The four fields the model expects. Cached on disk."""
     out = {"rdap_found": 0, "age_bucket": -1, "expiry_short": 0, "ns_count": 0}
+    if not domain:
+        return out
     f = CACHE / f"{domain}.json"
     d = None
     if f.exists():
@@ -88,8 +115,8 @@ def rdap_features(domain):
                ns_count=min(len(d.get("nameservers") or []), 10))
     return out
 
+# ---------------------------------------------------------------- tls
 def tls_facts(host):
-    """Live certificate. Empty dict if the site is down."""
     try:
         ctx = ssl.create_default_context()
         with socket.create_connection((host, 443), timeout=6) as s:
@@ -99,61 +126,94 @@ def tls_facts(host):
         return {}
     issuer = " ".join(v for t in c.get("issuer", ()) for _, v in t).lower()
     org = [v for t in c.get("subject", ()) for k, v in t if k == "organizationName"]
-    nb = c.get("notBefore")
     try:
         days = (datetime.now(timezone.utc)
-                - datetime.strptime(nb, "%b %d %H:%M:%S %Y %Z")
+                - datetime.strptime(c.get("notBefore"), "%b %d %H:%M:%S %Y %Z")
                   .replace(tzinfo=timezone.utc)).days
     except Exception:
-        days = None
+        days = -1
     sans = [v for k, v in c.get("subjectAltName", ()) if k == "DNS"]
-    return {"tls_issuer": issuer[:80], "tls_free_ca": int(any(ca in issuer for ca in FREE_CA)),
+    return {"tls_issuer": issuer[:80],
+            "tls_free_ca": int(any(ca in issuer for ca in FREE_CA)),
             "tls_has_org": int(bool(org)), "tls_org": org[0] if org else "",
-            "tls_age_days": days if days is not None else -1,
-            "tls_san_count": len(sans)}
+            "tls_age_days": days, "tls_san_count": len(sans)}
 
+# ---------------------------------------------------------------- page
 def page_facts(url):
-    """Fetch and inspect the page. Empty dict if unreachable."""
     if "://" not in url:
         url = "https://" + url
     try:
-        r = httpx.get(url, timeout=8, follow_redirects=True,
-                      headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        r = httpx.get(url, timeout=10, follow_redirects=True, headers=BROWSER_UA)
     except Exception:
         return {}
+
     final = str(r.url)
-    host = urlparse(final).hostname or ""
-    page_reg = reg_of(host)
+    page_reg = reg_of(urlparse(final).hostname or "")
+    out = {"redirect_count": len(r.history), "final_url": final,
+           "status": r.status_code}
 
     try:
         soup = BeautifulSoup(r.text, "lxml")
     except Exception:
-        return {"redirect_count": len(r.history), "final_url": final}
+        return out
 
-    cross, pw, card, gw_ok = 0, 0, 0, 0
+    cross = pw = card = gw_ok = 0
     for form in soup.find_all("form"):
         action = (form.get("action") or "").strip()
         if action.startswith("http"):
             a_reg = reg_of(urlparse(action).hostname or "")
             if a_reg and a_reg != page_reg:
                 cross = 1
-                if any(action.lower().find(g) >= 0 for g in GATEWAYS):
+                if any(g in action.lower() for g in GATEWAYS):
                     gw_ok = 1
         for inp in form.find_all("input"):
             t = (inp.get("type") or "").lower()
             n = ((inp.get("name") or "") + (inp.get("id") or "")).lower()
             if t == "password": pw = 1
-            if any(k in n for k in ("card", "cvv", "cvc", "creditcard", "pan")): card = 1
+            if any(k in n for k in ("card", "cvv", "cvc", "creditcard", "pan")):
+                card = 1
 
-    icon = soup.find("link", rel=lambda v: v and "icon" in v.lower())
-    return {
-        "redirect_count":   len(r.history),
-        "final_url":        final,
-        "status":           r.status_code,
+    hotlinked = set()
+    for t in soup.find_all(["img", "script", "link"]):
+        src = (t.get("src") or t.get("href") or "")
+        if src.startswith("http"):
+            hr = reg_of(urlparse(src).hostname or "")
+            if hr and hr != page_reg:
+                hotlinked.add(hr)
+
+    out.update({
         "form_cross_domain": cross,
-        "has_password":      pw,
-        "has_card_field":    card,
+        "has_password": pw,
+        "has_card_field": card,
         "card_outside_gateway": int(card and cross and not gw_ok),
-        "has_favicon":       int(bool(icon)),
-        "title":             (soup.title.string or "")[:120] if soup.title else "",
-    }
+        "has_favicon": int(bool(soup.find("link",
+                           rel=lambda v: v and "icon" in v.lower()))),
+        "title": (soup.title.string or "")[:120] if soup.title else "",
+        "text": soup.get_text(" ", strip=True)[:2000],
+        "hotlinked_domains": sorted(hotlinked),
+        "page_reg": page_reg,
+    })
+
+    refs, ref_domains = references()
+    if refs:
+        try:
+            sus = fingerprint(r.text, final)
+        except Exception:
+            return out
+        best_brand, best_score, best_detail = None, 0.0, {}
+        for brand, fps in refs.items():
+            for fp in fps:
+                s = similarity(sus, fp)
+                if s["overall"] > best_score:
+                    best_brand, best_score, best_detail = brand, s["overall"], s
+        if best_brand:
+            out.update({
+                "sim_brand": best_brand,
+                "sim_overall": best_score,
+                "sim_detail": {k: round(v, 3) for k, v in best_detail.items()},
+                "sim_is_that_brand": int(page_reg in ref_domains.get(best_brand, set())),
+                "hotlinks_brand": sorted(
+                    {b for b, doms in ref_domains.items()
+                     if doms & set(out["hotlinked_domains"])}),
+            })
+    return out
