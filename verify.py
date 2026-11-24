@@ -30,13 +30,18 @@ def post(path, body, timeout=45):
 
 print("\n--- 1. is it up ---")
 try:
-    root = httpx.get(API + "/", timeout=10).json()
+    resp = httpx.get(API + "/api", timeout=10, follow_redirects=True)
+    if resp.status_code == 404:          # older build, JSON still at /
+        resp = httpx.get(API + "/", timeout=10, follow_redirects=True)
+    root = resp.json()
     print(f"  features={root.get('features')}  official={root.get('official')}  "
           f"confirmed={root.get('confirmed')}  reported={root.get('reported')}")
     check("API responds", root.get("status"), "ok")
     check("official allowlist loaded", (root.get("official") or 0) > 0, True)
 except Exception as e:
-    print(f"  API unreachable ({e.__class__.__name__}) - start uvicorn first")
+    print(f"  could not read the service JSON ({e.__class__.__name__})")
+    print("  - is uvicorn running on port 8000?")
+    print("  - if it is, you may be on an older build: restart uvicorn after pulling")
     sys.exit(1)
 
 print("\n--- 2. official allowlist ---")
@@ -95,6 +100,11 @@ r = post("/check", {"url": test_dom, "deep": False})
 check("rejected domain is no longer CONFIRMED", r.get("status") != "CONFIRMED", True)
 
 print("\n--- 8. dashboard endpoints ---")
+try:
+    code = httpx.get(API + "/dashboard", timeout=20).status_code
+except Exception:
+    code = 0
+check("GET /dashboard (the console)", code, 200)
 for path in ("/stats", "/detections?limit=5", "/campaigns", "/confirmed",
              "/official", "/reviews"):
     try:
