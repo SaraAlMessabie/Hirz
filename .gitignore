@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+shielf/
+venv/
+cache/
+evidence/
+*.pkl
+data/raw/
+data/*.json

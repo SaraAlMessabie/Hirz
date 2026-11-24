@@ -1,5 +1,7 @@
 """
-Certificate Transparency watcher.
+Certificate Transparency watcher - finds brand-impersonating domains shortly
+after they get a certificate, usually before any public feed knows about them.
+
   python ct_watch.py           # one scan
   python ct_watch.py --watch   # loop every 5 minutes
 """
@@ -12,35 +14,67 @@ OUT  = pathlib.Path("data/ct_hits.csv")
 SEEN = pathlib.Path("data/ct_seen.json")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; scam-detect-research/0.1)"}
 
-HOURS_BACK = 8760                 # exclude=expired already drops the old ones
+HOURS_BACK = 8760
 API = "http://127.0.0.1:8000/check"
 
 TERMS = ["adcb", "emiratesnbd", "aramex", "uaepass", "emiratespost",
          "dhl", "fedex", "paypal", "netflix", "whatsapp"]
 
+# a certificate covering the brand's real domain was issued BY the brand
+REAL = {"paypal": "paypal.com", "dhl": "dhl.com", "fedex": "fedex.com",
+        "netflix": "netflix.com", "whatsapp": "whatsapp.com",
+        "aramex": "aramex.com", "adcb": "adcb.com",
+        "emiratesnbd": "emiratesnbd.com", "uaepass": "uaepass.ae",
+        "emiratespost": "emiratespost.ae"}
+
+FREE_HOSTS = ("pages.dev", "web.app", "firebaseapp.com", "workers.dev",
+              "netlify.app", "github.io", "vercel.app", "r2.dev",
+              "glitch.me", "repl.co", "000webhostapp.com")
+
+FREE_CA = ("let's encrypt", "zerossl", "google trust", "buypass", "actalis")
+EV_HINTS = ("ev rsa", "ev ecc", "extended validation")
+
+
 def reg_of(host):
     e = tldextract.extract(host)
     return f"{e.domain}.{e.suffix}" if e.domain and e.suffix else host
 
+
 def is_brand_own(reg, term):
-    """aramex.com / aramex.ae -> real brand.  aramex-delivery.xyz -> not."""
     return tldextract.extract(reg).domain == term
+
+
+def cert_covers_real_brand(cert, term):
+    names = {n.strip().lstrip("*.").lower()
+             for n in (cert.get("name_value") or "").split("\n")}
+    real = REAL.get(term)
+    return bool(real) and any(n == real or n.endswith("." + real) for n in names)
+
+
+def looks_like_domain(name):
+    return bool(name) and "." in name and " " not in name and "," not in name
+
 
 def load_seen():
     if SEEN.exists():
-        try: return set(json.loads(SEEN.read_text("utf-8")))
-        except Exception: pass
+        try:
+            return set(json.loads(SEEN.read_text("utf-8")))
+        except Exception:
+            pass
     return set()
+
 
 def known_public():
     out = set()
-    for name in ["openphish.txt", "phishdb.txt"]:
+    for name in ("openphish.txt", "phishdb.txt"):
         p = pathlib.Path("data/raw") / name
         if p.exists():
             for line in p.read_text("utf-8", errors="ignore").splitlines():
                 h = line.split("//")[-1].split("/")[0].strip().lower()
-                if h: out.add(reg_of(h))
+                if h:
+                    out.add(reg_of(h))
     return out
+
 
 def query(pattern, tries=3):
     for i in range(tries):
@@ -57,11 +91,14 @@ def query(pattern, tries=3):
             time.sleep(4 * (i + 1))
     return []
 
+
 def score(domain):
     try:
-        return httpx.post(API, json={"url": domain}, timeout=10).json()
+        return httpx.post(API, json={"url": domain, "deep": False},
+                          timeout=20).json()
     except Exception:
         return {}
+
 
 def scan():
     seen, public = load_seen(), known_public()
@@ -86,14 +123,28 @@ def scan():
                     continue
                 n_recent += 1
 
+                if cert_covers_real_brand(c, term):
+                    n_own += 1
+                    continue
+
+                issuer = c.get("issuer_name") or ""
+                low = issuer.lower()
+                free_ca = int(any(ca in low for ca in FREE_CA))
+                ev = int(any(h in low for h in EV_HINTS))
+                if ev:                      # EV requires verified legal identity
+                    n_own += 1
+                    continue
+
                 for name in set((c.get("name_value") or "").split("\n")):
                     name = name.strip().lstrip("*.").lower()
-                    if not name or term not in name:
+                    if not looks_like_domain(name) or term not in name:
                         continue
-                    reg = reg_of(name)
-                    if is_brand_own(reg, term):
-                        n_own += 1; continue
-                    if reg in seen:
+                    reg = name if name.endswith(FREE_HOSTS) else reg_of(name)
+                    if term not in reg:     # brand was in the subdomain
+                        reg = name
+                    if is_brand_own(reg, term) or reg in seen:
+                        if is_brand_own(reg, term):
+                            n_own += 1
                         continue
 
                     seen.add(reg); n_new += 1
@@ -103,9 +154,18 @@ def scan():
                         "cert_issued": issued.isoformat(timespec="seconds"),
                         "first_seen_by_us": now_iso,
                         "already_in_public_feed": int(reg in public),
-                        "score": v.get("score", ""), "verdict": v.get("verdict", ""),
-                        "issuer": (c.get("issuer_name") or "")[:60],
+                        "score": v.get("score", ""),
+                        "status": v.get("status", ""),
+                        "verdict": v.get("verdict", ""),
+                        "free_ca": free_ca, "issuer": issuer[:60],
                     })
+
+            if rows:
+                _d = pd.DataFrame(rows)
+                if OUT.exists():
+                    _d = (pd.concat([pd.read_csv(OUT), _d])
+                            .drop_duplicates("domain", keep="first"))
+                _d.to_csv(OUT, index=False)
             time.sleep(3)
 
         span = f"{min(dates).date()}..{max(dates).date()}" if dates else "none"
@@ -116,15 +176,13 @@ def scan():
     if not rows:
         print("\nno new domains this scan"); return
 
-    df = pd.DataFrame(rows).sort_values("score", ascending=False)
-    if OUT.exists():
-        df = pd.concat([pd.read_csv(OUT), df]).drop_duplicates("domain", keep="first")
-    df.to_csv(OUT, index=False)
-
+    df = pd.read_csv(OUT)
     print(f"\n{len(rows)} new  |  {len(df)} total -> {OUT}")
     print(f"NOT yet in any public feed: {(df.already_in_public_feed == 0).sum()}")
-    print("\n" + df.head(15)[["brand","domain","cert_issued","score","verdict"]]
-                    .to_string(index=False))
+    print("\n" + df.sort_values("score", ascending=False)
+                   .head(15)[["brand", "domain", "cert_issued", "score", "free_ca"]]
+                   .to_string(index=False))
+
 
 if __name__ == "__main__":
     if "--watch" in sys.argv:
