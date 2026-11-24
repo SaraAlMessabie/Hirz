@@ -94,11 +94,11 @@
 
   <div class="wrap">
     <div class="panel">
-      <h2>Detections <span id="count" style="font-weight:400"></span></h2>
+      <h2>Detections — unverified <span id="count" style="font-weight:400"></span></h2>
       <table>
-        <thead><tr><th>Domain</th><th>Brand</th><th>Score</th>
+        <thead><tr><th>Domain</th><th>Brand</th><th>Score</th><th>Status</th>
                    <th>Source</th><th>First seen</th></tr></thead>
-        <tbody id="rows"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+        <tbody id="rows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
       </table>
     </div>
 
@@ -150,9 +150,10 @@ async function loadDetections(){
     <tr onclick="pick(${i})" id="r${i}">
       <td class="dom" title="${r.domain}">${r.domain}</td>
       <td>${r.brand || "—"}</td><td><b>${Math.round(r.score)}</b></td>
+      <td><span class="pill REPORTED">reported</span></td>
       <td><span class="pill tag">${r.source === "certificate_transparency" ? "CT" : "sweep"}</span></td>
       <td>${(r.first_seen||"").slice(0,10) || "—"}</td></tr>`).join("")
-    : `<tr><td colspan="5" class="muted">No detections match those filters.</td></tr>`;
+    : `<tr><td colspan="6" class="muted">No detections match those filters.</td></tr>`;
 }
 
 async function pick(i){
