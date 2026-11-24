@@ -22,8 +22,11 @@ import httpx
 
 from tier2 import bootstrap, reg_of
 
-OUT = pathlib.Path("evidence")
-RDAP_CACHE = pathlib.Path("cache/rdap")
+# Anchored to the repo: the servers import this module and may be started
+# from any directory.
+ROOT = pathlib.Path(__file__).resolve().parent
+OUT = ROOT / "evidence"
+RDAP_CACHE = ROOT / "cache" / "rdap"
 UA = {"User-Agent": "Mozilla/5.0 (compatible; hirz-evidence/0.1)"}
 CLOUDFLARE_ASN = "13335"
 

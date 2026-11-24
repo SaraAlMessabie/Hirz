@@ -30,10 +30,14 @@ import httpx
 
 from tier2 import reg_of
 
-DATA = pathlib.Path("data")
+# Anchored to the repo, not to the working directory: hirz_server.py imports this
+# module, and a server started from anywhere else was reading a "data" folder that
+# did not exist.
+ROOT = pathlib.Path(__file__).resolve().parent
+DATA = ROOT / "data"
 FIXTURE = DATA / "fixtures" / "listings.json"
 OUT = DATA / "listing_hits.csv"
-OSM_CACHE = pathlib.Path("cache/osm")
+OSM_CACHE = ROOT / "cache" / "osm"
 UA = "Hirz-hackathon-prototype/0.1 (scam listing research)"
 
 DEFAULT_QUERIES = ["ADCB customer service", "Emirates NBD customer service Dubai",

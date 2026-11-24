@@ -617,6 +617,13 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
         <div class="result" hidden>
           <div class="verdict"><div class="word"></div><div class="sub"></div></div>
           <div class="body"><div class="signals"></div><h2 data-t="why"></h2><ul class="reasons"></ul>
+            <div class="actions">
+              <div id="l-evidence" class="evidence">
+                <button id="lEvBtn" type="button"></button>
+                <div id="lEvMsg" class="msg"></div>
+              </div>
+              <button id="lstReport" type="button" class="ghost" data-t="report.cta"></button>
+            </div>
             <div class="note" data-t="disclaimer"></div></div>
         </div>
       </div>
@@ -651,7 +658,13 @@ button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
           <div id="m-items"></div>
           <h2 data-t="msg.rec"></h2>
           <ul class="reasons recs"></ul>
-          <div class="actions"><button id="mReport" type="button" class="ghost" data-t="report.cta"></button></div>
+          <div class="actions">
+            <div id="m-evidence" class="evidence">
+              <button id="mEvBtn" type="button"></button>
+              <div id="mEvMsg" class="msg"></div>
+            </div>
+            <button id="mReport" type="button" class="ghost" data-t="report.cta"></button>
+          </div>
           <div class="note" data-t="disclaimer"></div>
         </div>
       </div>
@@ -1028,7 +1041,10 @@ function fillReasons(ul, items) {              // items: [{text, kind: "risk"|"s
 }
 const apiReasons = (reasons, brand) => (reasons || []).map((r) => ({
   kind: r.direction === "safe" ? "safe" : "risk",
-  text: LANG === "ar" ? (REASON_AR[r.code] || r.text || r.code).replace("{b}", brand || "الجهة") : (r.text || r.code || ""),
+  // the server translates the sentences it composes; the table covers the fixed codes
+  text: LANG === "ar"
+    ? (r.text_ar || REASON_AR[r.code] || r.text || r.code).replace("{b}", brand || "الجهة")
+    : (r.text || r.code || ""),
 }));
 
 // ---------- tabs
@@ -1052,8 +1068,12 @@ const pLink = $("p-link");
 let lastUrl = "", linkData = null, evBusy = false;
 function resetEvidence(hide = true) {
   if (hide) ["evidence", "proceed", "warn"].forEach((id) => $(id).classList.remove("on"));
-  $("evBtn").disabled = false; $("evBtn").textContent = t("ev.btn");
-  $("evMsg").className = "msg"; $("evMsg").textContent = t("ev.hint");
+  for (const p of EV_PANELS) {
+    const btn = $(p.btnId), msg = $(p.msgId);
+    if (!btn) continue;
+    btn.disabled = false; btn.textContent = t("ev.btn");
+    msg.className = "msg"; msg.textContent = t("ev.hint");
+  }
 }
 function renderLink(scroll) {
   if (!linkData) return;
@@ -1086,21 +1106,37 @@ $("f-link").addEventListener("submit", async (e) => {
   } catch (err) { showError(pLink, errText(err)); }
   finally { busy(pLink, false); }
 });
-$("evBtn").addEventListener("click", async () => {
-  const btn = $("evBtn"), msg = $("evMsg");
-  evBusy = true; btn.disabled = true; btn.textContent = t("ev.building"); msg.className = "msg"; msg.textContent = t("ev.collecting");
-  try {
-    const r = await post("/api/evidence", { url: lastUrl });
-    const blob = await r.blob(), id = r.headers.get("X-Evidence-Id") || "report";
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "hirz-evidence-" + id + ".pdf";
-    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    btn.textContent = t("ev.done");
-    const h = r.headers.get("X-Bundle-SHA256") || "";
-    msg.textContent = t("ev.saved", { f: iso(a.download) }) + (h ? t("ev.hash", { h: iso(h.slice(0, 16)) }) : "");
-  } catch (err) { btn.textContent = t("ev.btn"); msg.className = "msg err"; msg.textContent = errText(err); }
-  finally { btn.disabled = false; evBusy = false; }
-});
+// The evidence bundle is built around a web address: the PDF carries the
+// registration, the certificate and the hosting for one host. So each panel
+// supplies the address its result is about -- the link itself, the worst link
+// found in a message, the website on a listing -- and a panel with no address
+// hides the button rather than offering a report that cannot be built.
+const EV_PANELS = [];
+function wireEvidence(boxId, btnId, msgId, getUrl) {
+  EV_PANELS.push({ boxId, btnId, msgId, getUrl });
+  $(btnId).addEventListener("click", async () => {
+    const btn = $(btnId), msg = $(msgId), url = getUrl();
+    if (!url) return;
+    evBusy = true; btn.disabled = true; btn.textContent = t("ev.building");
+    msg.className = "msg"; msg.textContent = t("ev.collecting");
+    try {
+      const r = await post("/api/evidence", { url });
+      const blob = await r.blob(), id = r.headers.get("X-Evidence-Id") || "report";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "hirz-evidence-" + id + ".pdf";
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      btn.textContent = t("ev.done");
+      const h = r.headers.get("X-Bundle-SHA256") || "";
+      msg.textContent = t("ev.saved", { f: iso(a.download) }) + (h ? t("ev.hash", { h: iso(h.slice(0, 16)) }) : "");
+    } catch (err) { btn.textContent = t("ev.btn"); msg.className = "msg err"; msg.textContent = errText(err); }
+    finally { btn.disabled = false; evBusy = false; }
+  });
+}
+// the link panel keeps its own show/hide rules (it also drives the proceed warning)
+wireEvidence("evidence", "evBtn", "evMsg", () => lastUrl);
+
+// show the button only when there is something to build a report about
+function evShow(boxId, on) { $(boxId).classList.toggle("on", !!on); }
 $("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
 $("openBtn").addEventListener("click", () => window.open(/^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl, "_blank", "noopener,noreferrer"));
 
@@ -1210,9 +1246,17 @@ function renderListing(scroll) {
   verdictBlock(card, LTONE[row.verdict] || "grey", word, sub);
   within(card, ".signals").replaceWith(signalsBox(row));
   fillReasons(within(card, ".reasons"), listingReasons(row));
+  evShow("l-evidence", row.website);
   card.hidden = false;
   if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+wireEvidence("l-evidence", "lEvBtn", "lEvMsg", () => (listingRow && listingRow.website) || "");
+$("lstReport").addEventListener("click", () => {
+  const r = listingRow || {};
+  prefillReport("listing", r.website || r.phone || "",
+    [r.name, r.address, r.phone].filter(Boolean).join(" \u00b7 "));
+});
+
 function renderDemo() {
   if (!demoRows) return;
   const list = $("demo-list"), open = new Set([...list.querySelectorAll(".item.open")].map((el) => el.dataset.i));
@@ -1304,6 +1348,7 @@ function renderMsg(scroll) {
     box.append(itemRow(d.email_addresses.map(iso).join("  ·  "), []));
   }
   fillReasons(within(card, ".recs"), (d.recommendations || []).map((r) => ({ kind: "neutral", text: r })));
+  evShow("m-evidence", msgWorstUrl());
   card.hidden = false;
   if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1315,6 +1360,14 @@ $("f-message").addEventListener("submit", async (e) => {
   catch (err) { showError(pMsg, errText(err)); }
   finally { busy(pMsg, false); }
 });
+// the link worth putting in front of the police is the highest-scoring one
+const msgWorstUrl = () => {
+  const us = (msgData && msgData.urls) || [];
+  if (!us.length) return "";
+  return us.reduce((a, b) => ((b.score || 0) > (a.score || 0) ? b : a)).url;
+};
+wireEvidence("m-evidence", "mEvBtn", "mEvMsg", msgWorstUrl);
+
 $("mReport").addEventListener("click", () => {
   const u = ((msgData && (msgData.urls || [])[0]) || {}).url || "";
   const n = ((msgData && (msgData.phone_numbers || [])[0]) || {}).number || "";

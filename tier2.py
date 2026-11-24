@@ -17,7 +17,9 @@ try:
 except Exception:
     HAVE_REFS = False
 
-CACHE = pathlib.Path("cache/rdap"); CACHE.mkdir(parents=True, exist_ok=True)
+# Anchored to the repo: imported by the servers, which may start anywhere.
+ROOT = pathlib.Path(__file__).resolve().parent
+CACHE = ROOT / "cache" / "rdap"; CACHE.mkdir(parents=True, exist_ok=True)
 UA = {"User-Agent": "Mozilla/5.0 (compatible; scam-detect-research/0.1)",
       "Accept": "application/rdap+json"}
 BROWSER_UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -47,7 +49,7 @@ _REFS, _REF_DOMAINS = None, None
 def references():
     global _REFS, _REF_DOMAINS
     if _REFS is None:
-        p = pathlib.Path("data/references.json")
+        p = ROOT / "data" / "references.json"
         _REFS = json.loads(p.read_text("utf-8")) if (HAVE_REFS and p.exists()) else {}
         _REF_DOMAINS = {}
         for brand, fps in _REFS.items():

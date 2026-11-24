@@ -38,7 +38,7 @@
             border-bottom:1px solid var(--line);color:var(--dim);
             text-transform:uppercase;letter-spacing:.04em}
   table{width:100%;border-collapse:collapse}
-  th,td{padding:8px 13px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
+  th,td{padding:8px 13px;text-align:start;border-bottom:1px solid var(--line);font-size:13px}
   th{color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase}
   tbody tr{cursor:pointer} tbody tr:hover{background:#f9fafb}
   tbody tr.sel{background:#eef3ff}
@@ -64,14 +64,21 @@
   .takedown a{display:block;padding:6px 0;color:var(--blue);text-decoration:none;font-size:13px}
   .muted{color:var(--dim);padding:18px 15px;font-size:13px}
   .advisory{color:var(--dim);font-size:11.5px;padding:10px 15px 0;font-style:italic}
+  /* Arabic: the layout mirrors, but domains, scores and hashes stay left-to-right */
+  html[dir=rtl] body{font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif}
+  html[dir=rtl] .advisory{font-style:normal}
+  td.dom,.detail .dom,code,.kv span:last-child{direction:ltr;unicode-bidi:isolate}
+  #lang{margin-inline-start:auto;background:#fff;color:var(--ink);font-size:12.5px}
+  header{align-items:center}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Scam Detection — Investigator Console</h1>
-  <span class="proto">Prototype — not a police system</span>
+  <h1 data-t="title"></h1>
+  <span class="proto" data-t="proto"></span>
   <span id="updated"></span>
+  <button id="lang" type="button"></button>
 </header>
 
 <main>
@@ -81,49 +88,50 @@
   <div class="stats" id="stats"></div>
 
   <div class="bar">
-    <input id="brand" placeholder="Filter by brand…" style="width:170px">
+    <input id="brand" data-t-ph="f.brand" style="width:170px">
     <select id="source">
-      <option value="">All sources</option>
-      <option value="certificate_transparency">Certificate Transparency</option>
-      <option value="permutation_sweep">Permutation sweep</option>
+      <option value="" data-t="f.src.all"></option>
+      <option value="certificate_transparency" data-t="f.src.ct"></option>
+      <option value="permutation_sweep" data-t="f.src.perm"></option>
     </select>
     <select id="minscore">
-      <option value="0">Any score</option><option value="50">50+</option>
+      <option value="0" data-t="f.score.any"></option><option value="50">50+</option>
       <option value="80" selected>80+</option><option value="95">95+</option>
     </select>
-    <button onclick="loadDetections()">Apply</button>
-    <button class="ghost" onclick="loadAll()">Refresh</button>
+    <button onclick="loadDetections()" data-t="f.apply"></button>
+    <button class="ghost" onclick="loadAll()" data-t="f.refresh"></button>
   </div>
 
   <div class="panel" style="margin-bottom:14px">
-    <h2>Citizen reports <span id="repcount" style="font-weight:400"></span>
+    <h2><span data-t="rep.title"></span> <span id="repcount" style="font-weight:400"></span>
       <select id="repfilter" style="float:right;font-weight:400;width:150px">
-        <option value="pending">Pending</option>
-        <option value="">All</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="rejected">Rejected</option>
+        <option value="pending" data-t="rep.pending"></option>
+        <option value="" data-t="rep.all"></option>
+        <option value="confirmed" data-t="rep.confirmed"></option>
+        <option value="rejected" data-t="rep.rejected"></option>
       </select></h2>
     <table>
-      <thead><tr><th>Ref</th><th>Type</th><th>What was reported</th><th>Our check</th>
-                 <th>Reported by</th><th>When</th><th>Status</th><th></th></tr></thead>
-      <tbody id="reprows"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody>
+      <thead><tr><th data-t="rep.th.ref"></th><th data-t="rep.th.type"></th><th data-t="rep.th.what"></th>
+                 <th data-t="rep.th.check"></th><th data-t="rep.th.by"></th><th data-t="rep.th.when"></th>
+                 <th data-t="rep.th.status"></th><th></th></tr></thead>
+      <tbody id="reprows"><tr><td colspan="8" class="muted" data-t="loading"></td></tr></tbody>
     </table>
     <div id="repmsg" class="muted" style="padding:6px 0"></div>
   </div>
 
   <div class="wrap">
     <div class="panel">
-      <h2>Detections — unverified <span id="count" style="font-weight:400"></span></h2>
+      <h2><span data-t="det.title"></span> <span id="count" style="font-weight:400"></span></h2>
       <table>
-        <thead><tr><th>Domain</th><th>Brand</th><th>Score</th><th>Status</th>
-                   <th>Source</th><th>First seen</th></tr></thead>
-        <tbody id="rows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+        <thead><tr><th data-t="det.th.domain"></th><th data-t="det.th.brand"></th><th data-t="det.th.score"></th>
+                   <th data-t="det.th.status"></th><th data-t="det.th.source"></th><th data-t="det.th.first"></th></tr></thead>
+        <tbody id="rows"><tr><td colspan="6" class="muted" data-t="loading"></td></tr></tbody>
       </table>
     </div>
 
     <div class="panel">
-      <h2>Case detail</h2>
-      <div id="detail" class="muted">Select a detection to analyse it.</div>
+      <h2 data-t="case.title"></h2>
+      <div id="detail" class="muted" data-t="case.empty"></div>
     </div>
   </div>
 </main>
@@ -136,6 +144,292 @@ const API = !location.protocol.startsWith("http") ? "http://127.0.0.1:8000"
   : location.port && location.port !== "8000"
     ? location.protocol + "//" + location.hostname + ":8000"
     : location.origin;
+const D = { en: {
+ "rep.t.website": "Fake website or link",
+ "rep.t.phone": "Phone call or SMS",
+ "rep.t.listing": "Fake business listing",
+ "rep.t.other": "Something else",
+ "rep.anon": "anonymous",
+ "rep.under_review": "Under review",
+ "v.CONFIRMED": "Confirmed scam",
+ "v.REPORTED": "Reported",
+ "v.SUSPICIOUS": "Suspicious",
+ "v.NO MATCH": "No match",
+ "v.UNKNOWN": "Unknown",
+ "v.OFFICIAL": "Official",
+ "v.malicious": "Malicious",
+ "v.suspicious": "Suspicious",
+ "v.clean": "Clean",
+ "v.unknown": "Unknown",
+ "title": "Scam Detection — Investigator Console",
+ "proto": "Prototype — not a police system",
+ "updated": "updated {t}",
+ "lang": "العربية",
+ "lang.aria": "Switch to Arabic",
+ "st.unknown": "Unknown to every public feed",
+ "st.ct": "Certificate Transparency finds",
+ "st.perm": "Look-alikes registered < 1 year",
+ "st.mx": "With mail servers configured",
+ "st.confirmed": "Confirmed by a reviewer",
+ "st.official": "Verified official domains",
+ "f.brand": "Filter by brand…",
+ "f.src.all": "All sources",
+ "f.src.ct": "Certificate Transparency",
+ "f.src.perm": "Permutation sweep",
+ "f.score.any": "Any score",
+ "f.apply": "Apply",
+ "f.refresh": "Refresh",
+ "rep.title": "Citizen reports",
+ "rep.pending": "Pending",
+ "rep.all": "All",
+ "rep.confirmed": "Confirmed",
+ "rep.rejected": "Rejected",
+ "rep.th.ref": "Ref",
+ "rep.th.type": "Type",
+ "rep.th.what": "What was reported",
+ "rep.th.check": "Our check",
+ "rep.th.by": "Reported by",
+ "rep.th.when": "When",
+ "rep.th.status": "Status",
+ "rep.empty": "Nothing in this queue.",
+ "rep.err": "Could not load the report queue.",
+ "rep.desconly": "(description only)",
+ "rep.marked": "{id} marked {s}",
+ "rep.promoted": " — identifier promoted to CONFIRMED",
+ "det.title": "Detections — unverified",
+ "det.showing": "— {a} of {b}",
+ "det.th.domain": "Domain",
+ "det.th.brand": "Brand",
+ "det.th.score": "Score",
+ "det.th.status": "Status",
+ "det.th.source": "Source",
+ "det.th.first": "First seen",
+ "det.none": "No detections match those filters.",
+ "pill.reported": "reported",
+ "tag.ct": "CT",
+ "tag.sweep": "sweep",
+ "case.title": "Case detail",
+ "case.empty": "Select a detection to analyse it.",
+ "case.analysing": "Analysing…",
+ "case.unreach": "API unreachable.",
+ "case.risk": "risk {s}/100",
+ "case.cached": " · cached",
+ "why": "Why",
+ "case.noreasons": "No reasons returned.",
+ "ev.h": "Evidence",
+ "kv.registered": "Registered",
+ "kv.cert": "Certificate",
+ "kv.redirects": "Redirects",
+ "kv.cloaking": "Cloaking",
+ "kv.password": "Password field",
+ "kv.form": "Form posts offsite",
+ "yes": "yes",
+ "no": "no",
+ "dash": "—",
+ "unknown": "unknown",
+ "cert.free": "free CA",
+ "cert.org": "verified org",
+ "via.shortener": " (via shortener)",
+ "cloak.yes": "detected",
+ "cloak.no": "none",
+ "rev.h": "Review",
+ "rev.confirm": "Confirm as scam",
+ "rev.reject": "Reject",
+ "rev.official": "Mark official",
+ "rev.saving": "saving…",
+ "rev.confirmed": "Confirmed — {n} confirmed total",
+ "rev.rejected": "Rejected — {n} confirmed total",
+ "rev.unreach": "could not reach the API",
+ "rev.prompt": "Organisation this domain belongs to:",
+ "rev.added": "Added to the official allowlist ({n} total)",
+ "rev.already": "Already on the allowlist",
+ "evb.btn": "Download evidence report (PDF)",
+ "evb.building": "Building report…",
+ "evb.collecting": "capturing screenshot, registration and hosting data…",
+ "evb.done": "Report {id} downloaded",
+ "evb.nomod": "evidence module not loaded on the server",
+ "evb.failed": "could not build the report ({c})",
+ "td.h": "Takedown routing",
+ "td.registrar": "Registrar abuse contact →",
+ "td.hosting": "Hosting provider / CDN abuse →",
+ "td.google": "Report to Google Safe Browsing →",
+ "td.note": "Attach the evidence PDF above to any of these. It is hashed and timestamped.",
+ "err.build": "<b>The API is not serving the current build.</b> {m}<br>Stop uvicorn, <code>git pull</code>, then <code>uvicorn api:app --reload --port 8000</code>",
+ "loading": "Loading…",
+ "age0": "< 7 days",
+ "age1": "< 30 days",
+ "age2": "< 90 days",
+ "age3": "< 1 year",
+ "age4": "1–3 years",
+ "age5": "3+ years"
+},
+  ar: {
+ "rep.t.website": "موقع أو رابط مزيف",
+ "rep.t.phone": "مكالمة أو رسالة نصية",
+ "rep.t.listing": "نشاط تجاري مزيف",
+ "rep.t.other": "شيء آخر",
+ "rep.anon": "دون ذكر الاسم",
+ "rep.under_review": "قيد المراجعة",
+ "v.CONFIRMED": "احتيال مؤكد",
+ "v.REPORTED": "مُبلَّغ عنه",
+ "v.SUSPICIOUS": "مشبوه",
+ "v.NO MATCH": "لا يوجد تطابق",
+ "v.UNKNOWN": "غير معروف",
+ "v.OFFICIAL": "رسمي",
+ "v.malicious": "خبيث",
+ "v.suspicious": "مشبوه",
+ "v.clean": "نظيف",
+ "v.unknown": "غير معروف",
+ "title": "كشف الاحتيال — منصة المحقق",
+ "proto": "نموذج أولي — ليس نظاماً شرطياً",
+ "updated": "آخر تحديث {t}",
+ "lang": "English",
+ "lang.aria": "التبديل إلى الإنجليزية",
+ "st.unknown": "غير معروف لأي مصدر عام",
+ "st.ct": "اكتشافات شفافية الشهادات",
+ "st.perm": "نطاقات مشابهة مسجلة خلال أقل من سنة",
+ "st.mx": "لديها خوادم بريد مهيأة",
+ "st.confirmed": "مؤكدة من قبل مراجع",
+ "st.official": "نطاقات رسمية موثقة",
+ "f.brand": "تصفية حسب الجهة…",
+ "f.src.all": "كل المصادر",
+ "f.src.ct": "شفافية الشهادات",
+ "f.src.perm": "مسح التباديل",
+ "f.score.any": "أي درجة",
+ "f.apply": "تطبيق",
+ "f.refresh": "تحديث",
+ "rep.title": "بلاغات المواطنين",
+ "rep.pending": "قيد الانتظار",
+ "rep.all": "الكل",
+ "rep.confirmed": "مؤكدة",
+ "rep.rejected": "مرفوضة",
+ "rep.th.ref": "المرجع",
+ "rep.th.type": "النوع",
+ "rep.th.what": "ما تم الإبلاغ عنه",
+ "rep.th.check": "فحصنا",
+ "rep.th.by": "المُبلِّغ",
+ "rep.th.when": "التاريخ",
+ "rep.th.status": "الحالة",
+ "rep.empty": "لا يوجد شيء في هذه القائمة.",
+ "rep.err": "تعذر تحميل قائمة البلاغات.",
+ "rep.desconly": "(وصف فقط)",
+ "rep.marked": "تم تعليم {id} كـ {s}",
+ "rep.promoted": " — تمت ترقية المعرّف إلى مؤكد",
+ "det.title": "الاكتشافات — غير مؤكدة",
+ "det.showing": "— {a} من {b}",
+ "det.th.domain": "النطاق",
+ "det.th.brand": "الجهة",
+ "det.th.score": "الدرجة",
+ "det.th.status": "الحالة",
+ "det.th.source": "المصدر",
+ "det.th.first": "أول ظهور",
+ "det.none": "لا توجد اكتشافات تطابق هذه المرشحات.",
+ "pill.reported": "مُبلَّغ عنه",
+ "tag.ct": "شهادات",
+ "tag.sweep": "مسح",
+ "case.title": "تفاصيل الحالة",
+ "case.empty": "اختر اكتشافاً لتحليله.",
+ "case.analysing": "جارٍ التحليل…",
+ "case.unreach": "تعذر الوصول إلى الخادم.",
+ "case.risk": "الخطورة {s}/100",
+ "case.cached": " · من الذاكرة",
+ "why": "الأسباب",
+ "case.noreasons": "لم تُرجَع أي أسباب.",
+ "ev.h": "الأدلة",
+ "kv.registered": "تاريخ التسجيل",
+ "kv.cert": "الشهادة",
+ "kv.redirects": "إعادة التوجيه",
+ "kv.cloaking": "التمويه",
+ "kv.password": "حقل كلمة المرور",
+ "kv.form": "النموذج يرسل لنطاق آخر",
+ "yes": "نعم",
+ "no": "لا",
+ "dash": "—",
+ "unknown": "غير معروف",
+ "cert.free": "جهة إصدار مجانية",
+ "cert.org": "مؤسسة موثقة",
+ "via.shortener": " (عبر مختصر روابط)",
+ "cloak.yes": "تم رصده",
+ "cloak.no": "لا يوجد",
+ "rev.h": "المراجعة",
+ "rev.confirm": "تأكيد كاحتيال",
+ "rev.reject": "رفض",
+ "rev.official": "تعليم كرسمي",
+ "rev.saving": "جارٍ الحفظ…",
+ "rev.confirmed": "تم التأكيد — {n} مؤكد إجمالاً",
+ "rev.rejected": "تم الرفض — {n} مؤكد إجمالاً",
+ "rev.unreach": "تعذر الوصول إلى الخادم",
+ "rev.prompt": "الجهة التي يتبع لها هذا النطاق:",
+ "rev.added": "أُضيف إلى قائمة النطاقات الرسمية ({n} إجمالاً)",
+ "rev.already": "موجود بالفعل في القائمة",
+ "evb.btn": "تنزيل تقرير الأدلة (PDF)",
+ "evb.building": "جارٍ إعداد التقرير…",
+ "evb.collecting": "جارٍ التقاط الصورة وبيانات التسجيل والاستضافة…",
+ "evb.done": "تم تنزيل التقرير {id}",
+ "evb.nomod": "وحدة الأدلة غير محمّلة على الخادم",
+ "evb.failed": "تعذر إعداد التقرير ({c})",
+ "td.h": "مسار الإزالة",
+ "td.registrar": "جهة اتصال إساءة الاستخدام لدى المُسجِّل ←",
+ "td.hosting": "إساءة الاستخدام لدى مزود الاستضافة / CDN ←",
+ "td.google": "إبلاغ تصفح جوجل الآمن ←",
+ "td.note": "أرفق ملف الأدلة أعلاه بأي من هذه الجهات. التقرير موقّع بالبصمة ومختوم بالوقت.",
+ "err.build": "<b>الخادم لا يشغّل أحدث إصدار.</b> {m}<br>أوقف uvicorn ثم <code>git pull</code> ثم <code>uvicorn api:app --reload --port 8000</code>",
+ "loading": "جارٍ التحميل…",
+ "age0": "أقل من 7 أيام",
+ "age1": "أقل من 30 يوماً",
+ "age2": "أقل من 90 يوماً",
+ "age3": "أقل من سنة",
+ "age4": "1–3 سنوات",
+ "age5": "أكثر من 3 سنوات"
+} };
+
+// Mirrors the table in index.html, keyed by the reason codes api.py returns.
+const REASON_AR = {
+  free_host: "مستضاف على منصة مجانية تصدر شهادات HTTPS فورية",
+  cheap_tld: "يستخدم امتداد نطاق رخيصا يشتريه المحتالون بكميات كبيرة",
+  n_hyphens: "اسم النطاق محشو بشرطات", dom_len: "اسم نطاق طويل بشكل غير معتاد",
+  entropy: "اسم النطاق يبدو مولدا عشوائيا", n_digits: "أرقام مضافة إلى اسم النطاق",
+  digit_ratio: "نسبة عالية من الأرقام في اسم النطاق", brand_in_dom: "يحتوي على اسم علامة تجارية محمية",
+  kw_in_dom: "كلمات أمنية في اسم النطاق", ct_free_ca: "الشهادة صادرة عن جهة مجانية",
+  ct_age_bucket: "صدرت شهادة النطاق حديثا جدا", ct_max_san: "الشهادة تغطي عددا كبيرا من النطاقات غير المرتبطة (إصدار بالجملة)",
+  ct_found: "لم يعثر على سجل للشهادات",
+  _rule_brand_misplaced: "اسم العلامة التجارية يظهر في النطاق الفرعي بينما النطاق الحقيقي مختلف",
+  _rule_kw_in_sub: "كلمات أمنية مستخدمة في النطاق الفرعي", _rule_deep_sub: "تداخل غير معتاد في النطاقات الفرعية",
+  official: "يطابق رقم خدمة العملاء المنشور للجهة",
+  mobile_prefix: "رقم هاتف متحرك شخصي، بينما تنشر البنوك وشركات الشحن والجهات الحكومية في الإمارات أرقاما مجانية أو أرضية",
+  line_type: "رقم مجاني أو أرضي، وهذا يتوافق مع أرقام خدمة العملاء الحقيقية",
+  not_in_official_set: "ليس من الأرقام المنشورة رسميا لـ{b}", unparseable: "ليس رقم هاتف صالحا",
+};
+
+let LANG = "en";
+try { LANG = localStorage.getItem("hirz.lang") || (navigator.language || "").startsWith("ar") && "ar" || "en"; } catch (_) {}
+function d(k, vars = {}) {
+  let v = (D[LANG] && D[LANG][k]) ?? D.en[k] ?? k;
+  for (const [a, b] of Object.entries(vars)) v = String(v).replaceAll("{" + a + "}", b);
+  return v;
+}
+// a reason arrives as a code plus English text; Arabic renders from the code
+const word = (pfx, k) => (k && D[LANG] && D[LANG][pfx + k]) || k || "";
+const statusWord = (k) => word("rep.", k);
+const reasonText = (r) => LANG === "ar"
+  ? (r.text_ar || REASON_AR[r.code] || r.text || r.code || "")
+  : (r.text || r.code || "");
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  document.title = d("title");
+  document.querySelectorAll("[data-t]").forEach((el) => (el.textContent = d(el.dataset.t)));
+  document.querySelectorAll("[data-t-ph]").forEach((el) => (el.placeholder = d(el.dataset.tPh)));
+  const lb = document.getElementById("lang");
+  lb.textContent = d("lang"); lb.setAttribute("aria-label", d("lang.aria"));
+  loadAll();
+}
+document.getElementById("lang").addEventListener("click", () => {
+  LANG = LANG === "ar" ? "en" : "ar";
+  try { localStorage.setItem("hirz.lang", LANG); } catch (_) {}
+  applyLang();
+});
+
 let rows = [], current = null;
 
 // Nothing from the API is trusted markup: domains come from CT logs, report text
@@ -165,27 +459,25 @@ async function loadStats(){
     s = await getJSON("/stats");
     r = await getJSON("/api");          // "/" now serves the console, not JSON
   }catch(e){
-    banner("<b>The API is not serving the current build.</b> " + e.message +
-           "<br>Stop uvicorn, <code>git pull</code>, then "
-           + "<code>uvicorn api:app --reload --port 8000</code>");
+    banner(d("err.build", { m: esc(e.message) }));
     return;
   }
   banner("");
   document.getElementById("stats").innerHTML = `
-    <div class="stat hero"><div class="n">${s.unknown_to_public_feeds}</div>
-      <div class="l">Unknown to every public feed</div></div>
-    <div class="stat"><div class="n">${s.ct_discoveries}</div>
-      <div class="l">Certificate Transparency finds</div></div>
-    <div class="stat"><div class="n">${s.permutation_recent}</div>
-      <div class="l">Look-alikes registered &lt; 1 year</div></div>
-    <div class="stat"><div class="n">${s.permutation_with_mx}</div>
-      <div class="l">With mail servers configured</div></div>
-    <div class="stat"><div class="n">${r.confirmed ?? 0}</div>
-      <div class="l">Confirmed by a reviewer</div></div>
-    <div class="stat"><div class="n">${r.official ?? 0}</div>
-      <div class="l">Verified official domains</div></div>`;
+    <div class="stat hero"><div class="n">${esc(s.unknown_to_public_feeds)}</div>
+      <div class="l">${d("st.unknown")}</div></div>
+    <div class="stat"><div class="n">${esc(s.ct_discoveries)}</div>
+      <div class="l">${d("st.ct")}</div></div>
+    <div class="stat"><div class="n">${esc(s.permutation_recent)}</div>
+      <div class="l">${d("st.perm")}</div></div>
+    <div class="stat"><div class="n">${esc(s.permutation_with_mx)}</div>
+      <div class="l">${d("st.mx")}</div></div>
+    <div class="stat"><div class="n">${esc(r.confirmed ?? 0)}</div>
+      <div class="l">${d("st.confirmed")}</div></div>
+    <div class="stat"><div class="n">${esc(r.official ?? 0)}</div>
+      <div class="l">${d("st.official")}</div></div>`;
   document.getElementById("updated").textContent =
-    "updated " + new Date().toLocaleTimeString();
+    d("updated", { t: new Date().toLocaleTimeString(LANG === "ar" ? "ar-AE" : "en-GB") });
 }
 
 async function loadDetections(){
@@ -196,24 +488,24 @@ async function loadDetections(){
   if (b) p.set("brand", b);
   if (s) p.set("source", s);
 
-  let d;
+  let res;                                   // not `d`: that is the translator
   try{
-    d = await getJSON("/detections?" + p);
+    res = await getJSON("/detections?" + p);
   }catch(e){
     document.getElementById("rows").innerHTML =
-      `<tr><td colspan="6" class="muted">${e.message}</td></tr>`;
+      `<tr><td colspan="6" class="muted">${esc(e.message)}</td></tr>`;
     return;
   }
-  rows = d.items || [];
-  document.getElementById("count").textContent = `— ${d.showing} of ${d.total}`;
+  rows = res.items || [];
+  document.getElementById("count").textContent = d("det.showing", { a: res.showing, b: res.total });
   document.getElementById("rows").innerHTML = rows.length ? rows.map((r,i) => `
     <tr onclick="pick(${i})" id="r${i}">
       <td class="dom" title="${esc(r.domain)}">${esc(r.domain)}</td>
       <td>${esc(r.brand || "—")}</td><td><b>${Math.round(r.score)}</b></td>
-      <td><span class="pill REPORTED">reported</span></td>
-      <td><span class="pill tag">${r.source === "certificate_transparency" ? "CT" : "sweep"}</span></td>
-      <td>${(r.first_seen||"").slice(0,10) || "—"}</td></tr>`).join("")
-    : `<tr><td colspan="6" class="muted">No detections match those filters.</td></tr>`;
+      <td><span class="pill REPORTED">${d("pill.reported")}</span></td>
+      <td><span class="pill tag">${d(r.source === "certificate_transparency" ? "tag.ct" : "tag.sweep")}</span></td>
+      <td>${esc((r.first_seen||"").slice(0,10) || d("dash"))}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="muted">${d("det.none")}</td></tr>`;
 }
 
 async function pick(i){
@@ -222,7 +514,7 @@ async function pick(i){
   const r = rows[i]; current = r.domain;
   const el = document.getElementById("detail");
   el.className = "detail";
-  el.innerHTML = `<div class="dom">${esc(r.domain)}</div><div class="muted">Analysing…</div>`;
+  el.innerHTML = `<div class="dom">${esc(r.domain)}</div><div class="muted">${d("case.analysing")}</div>`;
 
   let v;
   try{
@@ -231,73 +523,72 @@ async function pick(i){
       body: JSON.stringify({url:r.domain, deep:true})})).json();
   }catch(e){
     el.innerHTML = `<div class="dom">${esc(r.domain)}</div>
-                    <div class="muted">API unreachable.</div>`; return;
+                    <div class="muted">${d("case.unreach")}</div>`; return;
   }
 
   const e = v.enrichment || {};
-  const age = ["< 7 days","< 30 days","< 90 days","< 1 year","1–3 years","3+ years"];
+  const age = [0,1,2,3,4,5].map((i) => d("age" + i));
   el.innerHTML = `
     <div class="dom">${esc(v.host)}</div>
     <div style="margin-bottom:13px">
-      <span class="pill ${esc(v.status || v.verdict)}">${esc((v.status||v.verdict).replace("_"," "))}</span>
-      <span style="color:var(--dim);font-size:12px;margin-left:8px">
-        risk ${v.score}/100${v.cached ? " · cached" : ""}</span>
+      <span class="pill ${esc(v.status || v.verdict)}">${esc(word("v.", (v.status || v.verdict || "").replace("_", " ")))}</span>
+      <span style="color:var(--dim);font-size:12px;margin-inline-start:8px">
+        ${d("case.risk", { s: esc(v.score) })}${v.cached ? d("case.cached") : ""}</span>
     </div>
 
-    <h2 style="border:0;padding:0 0 3px;margin:0">Why</h2>
+    <h2 style="border:0;padding:0 0 3px;margin:0">${d("why")}</h2>
     ${(v.reasons||[]).map(x =>
-      `<div class="reason ${esc(x.direction)}"><div class="dot"></div><div>${esc(x.text)}</div></div>`
-    ).join("") || '<div class="muted" style="padding:6px 0">No reasons returned.</div>'}
+      `<div class="reason ${esc(x.direction)}"><div class="dot"></div><div>${esc(reasonText(x))}</div></div>`
+    ).join("") || `<div class="muted" style="padding:6px 0">${d("case.noreasons")}</div>`}
 
-    <h2 style="border:0;padding:13px 0 3px;margin:0">Evidence</h2>
-    <div class="kv"><span>Registered</span><span>${
-      e.age_bucket >= 0 ? age[e.age_bucket] : "unknown"}</span></div>
-    <div class="kv"><span>Certificate</span><span>${
-      e.tls_free_ca ? "free CA" : (e.tls_has_org ? "verified org" : "—")}</span></div>
-    <div class="kv"><span>Redirects</span><span>${e.redirect_count ?? "—"}${
-      e.via_shortener ? " (via shortener)" : ""}</span></div>
-    <div class="kv"><span>Cloaking</span><span>${
-      e.cloaked ? "detected" : (e.cloaked === 0 ? "none" : "—")}</span></div>
-    <div class="kv"><span>Password field</span><span>${e.has_password ? "yes" : "no"}</span></div>
-    <div class="kv"><span>Form posts offsite</span><span>${e.form_cross_domain ? "yes" : "no"}</span></div>
+    <h2 style="border:0;padding:13px 0 3px;margin:0">${d("ev.h")}</h2>
+    <div class="kv"><span>${d("kv.registered")}</span><span>${
+      e.age_bucket >= 0 ? age[e.age_bucket] : d("unknown")}</span></div>
+    <div class="kv"><span>${d("kv.cert")}</span><span>${
+      e.tls_free_ca ? d("cert.free") : (e.tls_has_org ? d("cert.org") : d("dash"))}</span></div>
+    <div class="kv"><span>${d("kv.redirects")}</span><span>${esc(e.redirect_count ?? d("dash"))}${
+      e.via_shortener ? d("via.shortener") : ""}</span></div>
+    <div class="kv"><span>${d("kv.cloaking")}</span><span>${
+      e.cloaked ? d("cloak.yes") : (e.cloaked === 0 ? d("cloak.no") : d("dash"))}</span></div>
+    <div class="kv"><span>${d("kv.password")}</span><span>${d(e.has_password ? "yes" : "no")}</span></div>
+    <div class="kv"><span>${d("kv.form")}</span><span>${d(e.form_cross_domain ? "yes" : "no")}</span></div>
 
-    <h2 style="border:0;padding:13px 0 3px;margin:0">Review</h2>
+    <h2 style="border:0;padding:13px 0 3px;margin:0">${d("rev.h")}</h2>
     <div style="display:flex;gap:8px;margin:6px 0 4px">
-      <button class="ok" onclick="review('confirm')">Confirm as scam</button>
-      <button class="no" onclick="review('reject')">Reject</button>
-      <button class="ghost" onclick="markOfficial()">Mark official</button>
+      <button class="ok" onclick="review('confirm')">${d("rev.confirm")}</button>
+      <button class="no" onclick="review('reject')">${d("rev.reject")}</button>
+      <button class="ghost" onclick="markOfficial()">${d("rev.official")}</button>
     </div>
     <div style="margin:8px 0 2px">
       <button class="ghost" onclick="getEvidence()" id="evbtn"
-              style="width:100%">Download evidence report (PDF)</button>
+              style="width:100%">${d("evb.btn")}</button>
     </div>
     <div id="revmsg" class="muted" style="padding:4px 0"></div>
 
-    <h2 style="border:0;padding:13px 0 3px;margin:0">Takedown routing</h2>
+    <h2 style="border:0;padding:13px 0 3px;margin:0">${d("td.h")}</h2>
     <div class="takedown">
-      <a href="https://rdap.org/domain/${v.reg_domain}" target="_blank">Registrar abuse contact →</a>
-      <a href="https://abuse.cloudflare.com/" target="_blank">Hosting provider / CDN abuse →</a>
-      <a href="https://safebrowsing.google.com/safebrowsing/report_phish/" target="_blank">Report to Google Safe Browsing →</a>
+      <a href="https://rdap.org/domain/${encodeURIComponent(v.reg_domain || "")}" target="_blank" rel="noopener">${d("td.registrar")}</a>
+      <a href="https://abuse.cloudflare.com/" target="_blank" rel="noopener">${d("td.hosting")}</a>
+      <a href="https://safebrowsing.google.com/safebrowsing/report_phish/" target="_blank" rel="noopener">${d("td.google")}</a>
     </div>
-    <div class="advisory">Attach the evidence PDF above to any of these.
-      It is hashed and timestamped.</div>
-    <div class="advisory">${v.advisory || ""}</div>`;
+    <div class="advisory">${d("td.note")}</div>
+    <div class="advisory">${esc((LANG === "ar" && v.advisory_ar) || v.advisory || "")}</div>`;
 }
 
 async function review(decision){
   if (!current) return;
   const msg = document.getElementById("revmsg");
-  msg.textContent = "saving…";
+  msg.textContent = d("rev.saving");
   try{
     const r = await (await fetch(API + "/review", {method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({domain: current, decision, reviewer: "investigator"})
     })).json();
     msg.textContent = r.ok
-      ? `${decision === "confirm" ? "Confirmed" : "Rejected"} — ${r.confirmed} confirmed total`
+      ? d(decision === "confirm" ? "rev.confirmed" : "rev.rejected", { n: r.confirmed })
       : ("error: " + r.error);
     loadStats();
-  }catch(e){ msg.textContent = "could not reach the API"; }
+  }catch(e){ msg.textContent = d("rev.unreach"); }
 }
 
 async function getEvidence(){
@@ -305,16 +596,14 @@ async function getEvidence(){
   const btn = document.getElementById("evbtn");
   const msg = document.getElementById("revmsg");
   const label = btn.textContent;
-  btn.textContent = "Building report…"; btn.disabled = true;
-  msg.textContent = "capturing screenshot, registration and hosting data…";
+  btn.textContent = d("evb.building"); btn.disabled = true;
+  msg.textContent = d("evb.collecting");
   try{
     const r = await fetch(API + "/evidence", {method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({url: current})});
     if (!r.ok){
-      msg.textContent = r.status === 503
-        ? "evidence module not loaded on the server"
-        : "could not build the report (" + r.status + ")";
+      msg.textContent = r.status === 503 ? d("evb.nomod") : d("evb.failed", { c: r.status });
       return;
     }
     const id   = r.headers.get("X-Evidence-Id") || "report";
@@ -324,16 +613,16 @@ async function getEvidence(){
     a.href = URL.createObjectURL(blob);
     a.download = "hirz-evidence-" + id + ".pdf";
     document.body.appendChild(a); a.click(); a.remove();
-    msg.innerHTML = "Report <b>" + id + "</b> downloaded"
-      + (hash ? '<br><span style="font-family:ui-monospace;font-size:11px">sha256 '
-                + hash.slice(0,32) + '…</span>' : "");
-  }catch(e){ msg.textContent = "could not reach the API"; }
+    msg.innerHTML = d("evb.done", { id: "<b>" + esc(id) + "</b>" })
+      + (hash ? '<br><span style="font-family:ui-monospace;font-size:11px;direction:ltr;display:inline-block">sha256 '
+                + esc(hash.slice(0,32)) + '…</span>' : "");
+  }catch(e){ msg.textContent = d("rev.unreach"); }
   finally{ btn.textContent = label; btn.disabled = false; }
 }
 
 async function markOfficial(){
   if (!current) return;
-  const org = prompt("Organisation this domain belongs to:", "");
+  const org = prompt(d("rev.prompt"), "");
   if (org === null) return;
   const msg = document.getElementById("revmsg");
   msg.textContent = "saving…";
@@ -343,10 +632,9 @@ async function markOfficial(){
       body: JSON.stringify({domain: current, org,
                             source: "reviewer_verified",
                             added_by: "investigator"})})).json();
-    msg.textContent = r.ok ? `Added to the official allowlist (${r.total} total)`
-                           : "Already on the allowlist";
+    msg.textContent = r.ok ? d("rev.added", { n: r.total }) : d("rev.already");
     loadStats();
-  }catch(e){ msg.textContent = "could not reach the API"; }
+  }catch(e){ msg.textContent = d("rev.unreach"); }
 }
 
 
@@ -356,45 +644,50 @@ async function loadReports(){
   const tb = document.getElementById("reprows");
   const st = document.getElementById("repfilter").value;
   try{
-    const d = await getJSON("/reports" + (st ? "?status=" + encodeURIComponent(st) : ""));
-    reports = d.items || [];
-    const counts = d.counts || {};
+    const res = await getJSON("/reports" + (st ? "?status=" + encodeURIComponent(st) : ""));
+    reports = res.items || [];
+    const counts = res.counts || {};
     document.getElementById("repcount").textContent =
-      Object.keys(counts).length ? "— " + Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")
-                                 : `— ${reports.length}`;
-    if (!reports.length){ tb.innerHTML = '<tr><td colspan="8" class="muted">Nothing in this queue.</td></tr>'; return; }
+      Object.keys(counts).length
+        ? "— " + Object.entries(counts).map(([k, v]) => `${v} ${statusWord(k)}`).join(LANG === "ar" ? "، " : ", ")
+        : `— ${reports.length}`;
+    if (!reports.length){ tb.innerHTML = `<tr><td colspan="8" class="muted">${d("rep.empty")}</td></tr>`; return; }
     tb.innerHTML = reports.map((r, i) => {
-      const what = r.url || r.phone || r.email || "(description only)";
+      const what = r.url || r.phone || r.email || d("rep.desconly");
       const rid = /^R-[A-Z0-9]{1,16}$/.test(r.report_id || "") ? r.report_id : "";
-      const auto = r.auto_verdict ? esc(r.auto_verdict) + (r.auto_score !== "" && r.auto_score != null ? " · " + esc(r.auto_score) : "") : "—";
+      const auto = r.auto_verdict
+        ? esc(word("v.", r.auto_verdict)) + (r.auto_score !== "" && r.auto_score != null ? " · " + esc(r.auto_score) : "")
+        : d("dash");
       const act = r.status === "pending"
-        ? `<button class="ghost" onclick="setReport('${rid}','confirmed')">Confirm</button>
-           <button class="ghost" onclick="setReport('${rid}','rejected')">Reject</button>`
+        ? `<button class="ghost" onclick="setReport('${rid}','confirmed')">${d("rep.confirmed")}</button>
+           <button class="ghost" onclick="setReport('${rid}','rejected')">${d("rep.rejected")}</button>`
         : "";
-      return `<tr><td><code>${esc(r.report_id)}</code></td><td>${esc(r.type)}</td>
+      return `<tr><td><code>${esc(r.report_id)}</code></td><td>${esc(word("rep.t.", r.type))}</td>
         <td title="${esc(r.description || "")}">${esc(what)}</td><td>${auto}</td>
-        <td>${esc(r.reporter || "anonymous")}</td><td class="muted">${esc((r.created_at || "").slice(0, 16))}</td>
-        <td>${esc(r.status)}</td><td>${act}</td></tr>`;
+        <td>${esc(!r.reporter || r.reporter === "anonymous" ? d("rep.anon") : r.reporter)}</td><td class="muted">${esc((r.created_at || "").slice(0, 16))}</td>
+        <td>${esc(statusWord(r.status))}</td><td>${act}</td></tr>`;
     }).join("");
-  }catch(e){ tb.innerHTML = '<tr><td colspan="8" class="muted">Could not load the report queue.</td></tr>'; }
+  }catch(e){ tb.innerHTML = `<tr><td colspan="8" class="muted">${d("rep.err")}</td></tr>`; }
 }
 async function setReport(id, status){
   const msg = document.getElementById("repmsg");
-  msg.textContent = "saving…";
+  msg.textContent = d("rev.saving");
   try{
     const r = await (await fetch(API + "/report-status", {method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({report_id: id, status, reviewer: "investigator", note: ""})
     })).json();
-    msg.textContent = r.ok ? `${id} marked ${status}` + (r.promoted_to_confirmed ? " — identifier promoted to CONFIRMED" : "")
-                           : ("error: " + (r.error || "could not save"));
+    msg.textContent = r.ok
+      ? d("rep.marked", { id, s: statusWord(status) })
+        + (r.promoted_to_confirmed ? d("rep.promoted") : "")
+      : ("error: " + (r.error || "could not save"));
     loadReports(); loadStats(); loadDetections();
-  }catch(e){ msg.textContent = "could not reach the API"; }
+  }catch(e){ msg.textContent = d("rev.unreach"); }
 }
 document.getElementById("repfilter").addEventListener("change", loadReports);
 
 function loadAll(){ loadStats(); loadDetections(); loadReports(); }
-loadAll();
+applyLang();                                  // paints the labels, then loads
 setInterval(loadStats, 60000);
 </script>
 </body>

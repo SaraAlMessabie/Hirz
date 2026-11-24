@@ -24,7 +24,9 @@ Serves clients/index.html and these endpoints (the app calls them):
 
 The investigator console is served by api.py on port 8000, not by this file.
 
-Env: HIRZ_API (default http://127.0.0.1:8000), BRAVE_API_KEY, NOMINATIM_EMAIL (optional)
+Env: HIRZ_API (default http://127.0.0.1:8000), BRAVE_API_KEY, NOMINATIM_EMAIL (optional),
+     HIRZ_INVESTIGATOR_TOKEN (optional; when set, /api/report-status, /api/review and
+     /api/official require the X-Hirz-Token header)
 """
 import csv, os, pathlib
 
@@ -122,10 +124,19 @@ def listing(body: ListingIn):
 
 @app.get("/api/listings")
 def listings(refresh: int = 0):
+    """Serves the pre-scanned fixture results. A scan calls Nominatim once per
+    listing at one request a second, so it is never run to satisfy a page load:
+    without the file we say so, and only an explicit refresh=1 rebuilds it."""
     out = listing_scan.OUT
+    if not refresh and not out.exists():
+        raise HTTPException(503, "The listing results have not been generated yet. "
+                                 "Run `python listing_scan.py` once from the repo root, "
+                                 "or press Rescan to build them now (about a minute).")
     if refresh or not out.exists():
         _proxy("/check-number", {"number": "+97126962222"})
         rows = listing_scan.scan(API, "", os.environ.get("BRAVE_API_KEY", ""), os.environ.get("NOMINATIM_EMAIL", ""))
+        if not rows:
+            raise HTTPException(502, "The scan returned no listings.")
         with open(out, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
             w.writeheader(); w.writerows(rows)
@@ -152,11 +163,23 @@ def make_evidence(body: UrlIn):
 PASS_POST = {"report", "report-status", "scan-message", "review", "official"}
 PASS_GET = {"reports", "reviews", "stats", "detections", "campaigns", "confirmed", "official"}
 
+# This server is the one bound to 0.0.0.0, so everyone on the same network can
+# reach it. Filing a report is meant to be open; confirming one is not. Set
+# HIRZ_INVESTIGATOR_TOKEN and these three need the header. Left unset, nothing
+# changes -- a demo on a trusted laptop still works with no setup.
+INVESTIGATOR_TOKEN = os.environ.get("HIRZ_INVESTIGATOR_TOKEN", "")
+INVESTIGATOR_ONLY = {"report-status", "review", "official"}
+
 
 @app.post("/api/{path:path}")
-def pass_post(path: str, body: dict = Body(default={})):
+def pass_post(path: str, request: Request, body: dict = Body(default={})):
     if path not in PASS_POST:
         raise HTTPException(404, f"No such endpoint: /api/{path}")
+    if path in INVESTIGATOR_ONLY and INVESTIGATOR_TOKEN:
+        if request.headers.get("X-Hirz-Token") != INVESTIGATOR_TOKEN:
+            raise HTTPException(403, "This action is for investigators. Send the "
+                                     "X-Hirz-Token header with the value of "
+                                     "HIRZ_INVESTIGATOR_TOKEN.")
     return _proxy("/" + path, body)
 
 

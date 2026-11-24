@@ -29,7 +29,12 @@ except Exception:
 ESCALATE, BLOCK = 0.30, 0.80
 SIM_HARD, SIM_SOFT = 0.60, 0.40
 
-bundle = joblib.load("data/model.pkl")
+# Every path below hangs off the repo, not off the working directory. uvicorn
+# started from a parent folder (or a host that picks its own cwd) was silently
+# reading files that were not there.
+ROOT = pathlib.Path(__file__).resolve().parent
+
+bundle = joblib.load(ROOT / "data" / "model.pkl")
 MODEL, FEATS = bundle["model"], bundle["features"]
 
 TEXT = {
@@ -51,6 +56,88 @@ RULE_TEXT = {
 
 
 ADVISORY = ("Automated risk assessments are advisory and are not proof of fraud.")
+ADVISORY_AR = ("تقييمات المخاطر الآلية إرشادية وليست دليلاً على الاحتيال.")
+
+# ---------------------------------------- Arabic for the rule sentences
+# The hard/soft/clear rules are written as sentences rather than codes, because
+# several of them carry a number or a brand name. Rather than restructure the
+# scoring to carry codes, each reason also goes out with text_ar: the clients
+# prefer it when the reader is in Arabic, and ignore it otherwise. Patterns are
+# matched against the English sentence, groups reused in the same order.
+RULE_AR = [
+    (r"^Extended Validation certificate issued to (.+) - requires verified legal identity$",
+     "شهادة تحقق موسّع صادرة لـ\\1 — تتطلب هوية قانونية موثّقة"),
+    (r"^Certificate carries a verified organisation \((.+)\) on a domain registered years ago$",
+     "الشهادة تحمل مؤسسة موثّقة (\\1) على نطاق مسجّل منذ سنوات"),
+    (r"^Loads images or stylesheets directly from (.+)'s real website$",
+     "يحمّل صوراً أو ملفات تنسيق مباشرة من موقع \\1 الحقيقي"),
+    (r"^Page structure is (\d+)% identical to the real (.+) website but hosted on a different domain$",
+     "بنية الصفحة مطابقة بنسبة \\1% لموقع \\2 الحقيقي لكنها مستضافة على نطاق مختلف"),
+    (r"^Shares (\d+)% of CSS class names with the real (.+) website$",
+     "يتشارك \\1% من أسماء أصناف CSS مع موقع \\2 الحقيقي"),
+    (r"^Serves different content to a crawler than to a browser \((.*)\) - deliberate cloaking$",
+     "يعرض محتوى مختلفاً لمحركات الفهرسة عمّا يعرضه للمتصفح (\\1) — تمويه متعمّد"),
+    (r"^Reached through a URL shortener, which hides the destination$",
+     "تم الوصول عبر مختصر روابط يخفي الوجهة الحقيقية"),
+    (r"^Redirected to a different domain: (.*)$",
+     "أعاد التوجيه إلى نطاق مختلف: \\1"),
+    (r"^Card details are submitted to a domain that is not a known payment gateway$",
+     "بيانات البطاقة تُرسل إلى نطاق ليس بوابة دفع معروفة"),
+    (r"^A form on this page submits data to a different domain$",
+     "نموذج في هذه الصفحة يرسل البيانات إلى نطاق آخر"),
+    (r"^Password field on a domain registered within the last month$",
+     "حقل كلمة مرور على نطاق مسجّل خلال الشهر الماضي"),
+    (r"^Free certificate issued for a very new domain$",
+     "شهادة مجانية صادرة لنطاق حديث جداً"),
+    (r"^Claims a known brand but the certificate carries no verified organisation$",
+     "يدّعي الانتماء لجهة معروفة لكن الشهادة لا تحمل مؤسسة موثّقة"),
+    (r"^Redirects through (\d+) hops before landing$",
+     "يمر عبر \\1 عمليات إعادة توجيه قبل الوصول"),
+    (r"^Page content impersonates (.+) \((.*)\)$",
+     "محتوى الصفحة ينتحل صفة \\1 (\\2)"),
+    (r"^Domain has been registered for years$", "النطاق مسجّل منذ سنوات"),
+    (r"^VOIP line, unusual for an official helpline$",
+     "خط عبر الإنترنت، وهذا غير معتاد لرقم خدمة رسمي"),
+    (r"^Domain uses look-alike characters from another alphabet$",
+     "النطاق يستخدم حروفاً شبيهة من أبجدية أخرى"),
+    (r"^No known reports found for this address\. This does not guarantee it is safe\.$",
+     "لا توجد بلاغات معروفة عن هذا العنوان. وهذا لا يضمن أنه آمن."),
+]
+RULE_AR = [(re.compile(pat), ar) for pat, ar in RULE_AR]
+
+# RULE_TEXT entries already have Arabic in the clients, keyed by code
+RULE_TEXT_AR = {
+    "_rule_brand_misplaced": "اسم جهة معروفة مستخدم خارج نطاقها الحقيقي",
+    "_rule_mixed_script": "اسم النطاق يخلط بين أبجديتين",
+    "_rule_kw_in_sub": "كلمات أمنية مستخدمة في النطاق الفرعي",
+    "_rule_deep_sub": "تداخل غير معتاد في النطاقات الفرعية",
+}
+_RULE_BY_TEXT = {}
+
+
+def rule_ar(text):
+    """Arabic for one rule sentence, or "" when we have none for it."""
+    if not _RULE_BY_TEXT:
+        for code, en in RULE_TEXT.items():
+            if code in RULE_TEXT_AR:
+                _RULE_BY_TEXT[en] = RULE_TEXT_AR[code]
+    hit = _RULE_BY_TEXT.get(text)
+    if hit:
+        return hit
+    for pat, ar in RULE_AR:
+        m = pat.match(text)
+        if m:
+            return pat.sub(ar, text)
+    return ""
+
+
+def reason(code, direction, text):
+    r = {"code": code, "direction": direction, "text": text}
+    ar = rule_ar(text)
+    if ar:
+        r["text_ar"] = ar
+    return r
+
 
 NO_MATCH_TEXT = ("No known reports found for this address. "
                  "This does not guarantee it is safe.")
@@ -62,6 +149,8 @@ def now():
 
 def _rows(path):
     p = pathlib.Path(path)
+    if not p.is_absolute():
+        p = ROOT / p
     if not p.exists():
         return []
     return list(csv.DictReader(p.read_text("utf-8", errors="ignore").splitlines()))
@@ -70,8 +159,8 @@ def _rows(path):
 # ------------------------------------------------- confirmed / reported
 # CONFIRMED  = a human verified it. The ONLY thing we serve as certain.
 # REPORTED   = discovery or a user flagged it. Unverified.
-CONFIRMED_FILE = pathlib.Path("data/confirmed.csv")
-REVIEWS_FILE   = pathlib.Path("data/reviews.csv")
+CONFIRMED_FILE = ROOT / "data/confirmed.csv"
+REVIEWS_FILE   = ROOT / "data/reviews.csv"
 
 CONFIRMED, REPORTED = {}, {}
 
@@ -106,7 +195,7 @@ def remember_reported(domain, source, score):
         return
     rec = {"domain": domain, "source": source, "score": score, "first_seen": now()}
     REPORTED[domain] = rec
-    p = pathlib.Path("data/blocklist.csv")
+    p = ROOT / "data/blocklist.csv"
     fresh = not p.exists()
     with p.open("a", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
@@ -147,7 +236,7 @@ load_lists()
 # ------------------------------------------------- official / verified
 # Checked BEFORE anything else. A real bank or government site must never
 # reach the heuristics - Criterion 1 penalises exactly that false positive.
-OFFICIAL_FILE = pathlib.Path("data/official.csv")
+OFFICIAL_FILE = ROOT / "data/official.csv"
 OFFICIAL_DOMAINS = {}
 
 # Restricted second-level domains: only the named authority can register under
@@ -203,7 +292,7 @@ load_official()
 # Avoids re-running a 10s analysis on a domain we just checked.
 # TTL is age-dependent: a domain registered last week can be weaponised
 # tomorrow, a twenty-year-old one cannot.
-CACHE_FILE = pathlib.Path("data/check_cache.json")
+CACHE_FILE = ROOT / "data/check_cache.json"
 CHECK_CACHE = {}
 
 TTL_BY_AGE = {-1: 1800, 0: 900, 1: 1800, 2: 7200,
@@ -266,7 +355,7 @@ class NumIn(BaseModel):
     brand_context: str | None = None
 
 
-CLIENTS = pathlib.Path("clients")
+CLIENTS = ROOT / "clients"
 if CLIENTS.is_dir():
     app.mount("/app", StaticFiles(directory="clients", html=True), name="clients")
 
@@ -444,7 +533,7 @@ def evidence_report(body: UrlIn):
 def evidence_fetch(evidence_id: str):
     """Re-download a bundle already on disk."""
     safe = "".join(c for c in evidence_id if c.isalnum() or c in "-_")
-    p = pathlib.Path("evidence") / f"{safe}.pdf"
+    p = ROOT / "evidence" / f"{safe}.pdf"
     if not p.exists():
         raise HTTPException(404, "no such evidence report")
     return FileResponse(p, media_type="application/pdf",
@@ -452,7 +541,7 @@ def evidence_fetch(evidence_id: str):
 
 
 # ------------------------------------------------- citizen reporting
-REPORTS_FILE = pathlib.Path("data/reports.csv")
+REPORTS_FILE = ROOT / "data/reports.csv"
 REPORT_FIELDS = ["report_id", "type", "description", "url", "phone", "email",
                  "reporter", "status", "created_at", "auto_verdict", "auto_score"]
 
@@ -702,7 +791,7 @@ def scan_message(body: MessageIn):
             "urls": url_results, "phone_numbers": phone_results,
             "email_addresses": emails,
             "recommendations": recs,
-            "advisory": ADVISORY, "checked_at": now()}
+            "advisory": ADVISORY, "advisory_ar": ADVISORY_AR, "checked_at": now()}
 
 
 @app.get("/reviews")
@@ -723,7 +812,7 @@ def check(body: UrlIn):
     if off:
         return {"url": raw, "host": host, "reg_domain": reg,
                 "status": "OFFICIAL", "verdict": "clean", "score": 0,
-                "cached": True, "advisory": ADVISORY,
+                "cached": True, "advisory": ADVISORY, "advisory_ar": ADVISORY_AR,
                 "reasons": [{"code": "official", "direction": "safe",
                              "text": off_text}],
                 "enrichment": {}, "checked_at": now()}
@@ -740,7 +829,7 @@ def check(body: UrlIn):
         elif seen: note += f" (first seen {seen})"
         return {"url": raw, "host": host, "reg_domain": reg,
                 "status": "CONFIRMED", "verdict": "malicious", "score": 100,
-                "cached": True, "advisory": ADVISORY,
+                "cached": True, "advisory": ADVISORY, "advisory_ar": ADVISORY_AR,
                 "reasons": [{"code": "confirmed", "direction": "risk", "text": note}],
                 "enrichment": {}, "checked_at": now()}
 
@@ -758,7 +847,7 @@ def check(body: UrlIn):
         return {"url": raw, "host": host, "reg_domain": reg,
                 "status": "REPORTED", "verdict": "suspicious",
                 "score": int(float(rep.get("score") or 50)), "cached": True,
-                "advisory": ADVISORY,
+                "advisory": ADVISORY, "advisory_ar": ADVISORY_AR,
                 "reasons": [{"code": "reported", "direction": "risk",
                              "text": "Flagged by our discovery layer but not yet "
                                      "verified by a reviewer "
@@ -843,18 +932,17 @@ def check(body: UrlIn):
             if isinstance(e, str):
                 soft.append(e)
 
-    reasons = [{"code": "verified", "direction": "safe", "text": t} for t in clear]
-    reasons += [{"code": "rule", "direction": "risk", "text": t} for t in hard]
-    reasons += [{"code": "rule", "direction": "risk", "text": t} for t in soft]
+    reasons = [reason("verified", "safe", t) for t in clear]
+    reasons += [reason("rule", "risk", t) for t in hard]
+    reasons += [reason("rule", "risk", t) for t in soft]
     for name, _ in sorted(zip(FEATS, MODEL.feature_importances_), key=lambda kv: -kv[1]):
         if len(reasons) >= 6:
             break
         if row.get(name) and name in TEXT:
-            reasons.append({"code": name, "direction": "risk", "text": TEXT[name]})
+            reasons.append(reason(name, "risk", TEXT[name]))
 
     if row.get("age_bucket", -1) >= 4 and not hard:
-        reasons.append({"code": "age_bucket", "direction": "safe",
-                        "text": "Domain has been registered for years"})
+        reasons.append(reason("age_bucket", "safe", "Domain has been registered for years"))
     if page.get("sim_is_that_brand"):
         reasons.insert(0, {"code": "official", "direction": "safe",
                            "text": f"This is {sim_brand}'s own website"})
@@ -885,11 +973,11 @@ def check(body: UrlIn):
         remember_reported(reg, "user_submission", final_score)
 
     if status == "NO_MATCH" and not reasons:
-        reasons = [{"code": "no_match", "direction": "neutral", "text": NO_MATCH_TEXT}]
+        reasons = [reason("no_match", "neutral", NO_MATCH_TEXT)]
 
     result = {"url": raw, "host": host, "reg_domain": reg,
             "status": status, "verdict": verdict, "score": final_score,
-            "cached": False, "advisory": ADVISORY,
+            "cached": False, "advisory": ADVISORY, "advisory_ar": ADVISORY_AR,
             "reasons": reasons[:6],
             "enrichment": {
                 "age_bucket": row.get("age_bucket"),
@@ -936,8 +1024,7 @@ def check_number(body: NumIn):
                         "text": "Toll-free or landline, consistent with a real helpline"})
     elif kind == T.VOIP:
         score += 50
-        reasons.append({"code": "voip", "direction": "risk",
-                        "text": "VOIP line, unusual for an official helpline"})
+        reasons.append(reason("voip", "risk", "VOIP line, unusual for an official helpline"))
 
     brand = (body.brand_context or "").lower()
     if brand and BRAND_NUMBERS.get(brand):
