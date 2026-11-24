@@ -62,6 +62,24 @@ flowchart TD
 Tier 3 never clears what a hard rule flagged, and the system runs unchanged when
 Ollama is absent.
 
+### How the model reaches a score
+
+```mermaid
+flowchart LR
+    URL["adcb-verify.xyz"] --> FEAT["<b>11 features</b><br/>length · hyphens · digits<br/>brand token · entropy · TLD"]
+    RDAP["RDAP<br/>registration age"] --> FEAT
+    FEAT --> LGB["<b>LightGBM</b><br/>trained on 2,179<br/>labelled hosts"]
+    LGB --> SCORE["score 0–1"]
+    SCORE --> SHAP["<b>SHAP</b><br/>which feature moved it"]
+    SHAP --> OUT["<b>Score + named reasons</b>"]
+    RULES["<b>Hard rules</b><br/>password field · cloaking<br/>cross-domain form"] --> OUT
+    CLEAR["<b>Verified identity</b><br/>EV or the brand's own CA"] -->|"overrides everything"| OUT
+```
+
+The model never speaks alone. A hard rule can condemn a page the model liked,
+and proven identity clears a page the model disliked — which is how
+`dpdhl.com` stopped being called malicious.
+
 ## Where the innovation is
 
 **Certificate Transparency as an early-warning feed.** Every HTTPS certificate
@@ -228,6 +246,71 @@ matches, private-CA certificates, identity-checked OV certificates, and brand
 top-level domains like `.dhl`.
 
 ---
+
+## Where this goes next
+
+Everything below is **proposed, not built**. It is the design we would take into
+a police pilot, and the reason the current code keeps its storage and its
+decisions behind single functions.
+
+### The database, in production
+
+Today the stores are CSV files — right for one investigator, wrong for a force.
+The shape they would take:
+
+```mermaid
+erDiagram
+    FORCE ||--o{ INVESTIGATOR : employs
+    INVESTIGATOR ||--o{ REVIEW : decides
+    CITIZEN_REPORT ||--o{ REVIEW : "triaged by"
+    REVIEW ||--o| CONFIRMED : "promotes (append only)"
+    CONFIRMED ||--|| DOMAIN : names
+    DOMAIN ||--o{ CHECK : "scored in"
+    DOMAIN ||--o{ EVIDENCE : "bundled as"
+    CAMPAIGN ||--o{ DOMAIN : groups
+    BRAND ||--o{ OFFICIAL_ASSET : publishes
+    OFFICIAL_ASSET ||--o{ CHECK : "cleared by"
+```
+
+Three properties matter more than the schema. **`CONFIRMED` is append-only** —
+a confirmation is a decision on the record, and decisions are not quietly
+deleted. **Every row carries who decided and when**, because the output is
+meant for a court. **Campaigns group domains**, so taking down one scam takes
+down the twelve registered beside it.
+
+### Learning from the people who get targeted
+
+The loop that exists today stops at the confirmed list. The one we want keeps
+going:
+
+```mermaid
+flowchart TB
+    CIT["<b>Citizens</b><br/>report what they received"] --> Q["Report queue"]
+    Q --> INV["<b>Investigator</b><br/>confirms or rejects"]
+    INV --> LAB["<b>Labelled UAE data</b><br/>the thing no feed sells"]
+    LAB -->|"retrain"| MOD["<b>Detection model</b>"]
+    MOD --> Q
+    INV --> ORCH["<b>LLM orchestrator</b><br/>clusters campaigns<br/>drafts takedown requests<br/>explains a case"]
+    ORCH -->|"proposes — never sends"| INV
+    POL["<b>Police</b><br/>issue directives:<br/>watch this brand<br/>prioritise this campaign"] --> ORCH
+    INV -->|"approves"| ACT["<b>Takedown sent</b><br/>registrar · host · Safe Browsing"]
+```
+
+**Every report a citizen files is a label nobody can buy.** Public phishing
+feeds are global; a stream of real UAE reports, triaged by a real investigator,
+is the training data that would make this specifically good at Emirates NBD and
+TAMM rather than generically good at PayPal.
+
+**The orchestrator proposes and a human disposes.** It would cluster related
+domains, draft the takedown request, and explain a case in either language — but
+it does not send, confirm, or decide. An investigator approves every action that
+leaves the building. That is not a limitation we are working around; it is the
+only arrangement that makes the output usable as evidence.
+
+**Police set direction, not verdicts.** An officer should be able to say *watch
+these four banks this week* or *prioritise anything on this campaign* and have
+the system reorder its work — without being able to mark something confirmed
+without review.
 
 ## Honest limitations
 
