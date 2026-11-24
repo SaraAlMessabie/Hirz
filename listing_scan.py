@@ -131,39 +131,62 @@ def address_check(address, brand_rows, display):
 
 _last_osm = [0.0]
 
+# Names a brand may be mapped under on OpenStreetMap.
+OSM_NAMES = {"adcb": ["ADCB", "Abu Dhabi Commercial Bank"],
+             "emiratesnbd": ["Emirates NBD"],
+             "aramex": ["Aramex"],
+             "emiratespost": ["Emirates Post", "NXN"],
+             "uaepass": ["UAE PASS"],
+             "tamm": ["TAMM"]}
+CITIES = ("Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah", "Al Ain",
+          "Ras Al Khaimah", "Umm Al Quwain")
 
-def osm_check(listing, display, email=""):
-    """Nominatim: is this brand mapped at this address? Cached; max 1 request/second."""
-    city = next((c for c in ("Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Fujairah", "Al Ain",
-                             "Ras Al Khaimah", "Umm Al Quwain") if c.lower() in (listing.get("address") or "").lower()), "")
-    q = f"{display} {city}".strip()
+
+def _nominatim(q, email):
     OSM_CACHE.mkdir(parents=True, exist_ok=True)
     f = OSM_CACHE / (hashlib.sha1(q.encode()).hexdigest() + ".json")
     if f.exists():
-        results = json.loads(f.read_text("utf-8"))
-    else:
-        wait = 1.1 - (time.time() - _last_osm[0])
-        if wait > 0:
-            time.sleep(wait)
-        params = {"q": q, "format": "jsonv2", "limit": 40, "countrycodes": "ae"}
-        if email:
-            params["email"] = email
-        try:
-            r = httpx.get("https://nominatim.openstreetmap.org/search", params=params,
-                          headers={"User-Agent": UA}, timeout=15)
-            _last_osm[0] = time.time()
-            r.raise_for_status()
-            results = r.json()
-            f.write_text(json.dumps(results), "utf-8")
-        except Exception as e:
-            return None, f"OpenStreetMap could not be checked ({type(e).__name__})."
-    lt = toks(listing.get("address"))
-    bt = toks(display)
-    for res in results:
-        text = f"{res.get('name', '')} {res.get('display_name', '')}"
-        if (bt & toks(text)) and (len(lt & (toks(res.get("display_name")) - bt)) >= 1):
-            return True, f"OpenStreetMap shows a {display} location at this address ({res.get('name') or 'unnamed'})."
-    return False, f"OpenStreetMap has no {display} location at this address."
+        return json.loads(f.read_text("utf-8"))
+    wait = 1.1 - (time.time() - _last_osm[0])          # usage policy: max 1 request/second
+    if wait > 0:
+        time.sleep(wait)
+    params = {"q": q, "format": "jsonv2", "limit": 40, "countrycodes": "ae"}
+    if email:
+        params["email"] = email
+    r = httpx.get("https://nominatim.openstreetmap.org/search", params=params,
+                  headers={"User-Agent": UA}, timeout=15)
+    _last_osm[0] = time.time()
+    r.raise_for_status()
+    results = r.json()
+    f.write_text(json.dumps(results), "utf-8")
+    return results
+
+
+def osm_check(listing, display, email=""):
+    """Is this brand mapped on OpenStreetMap at this address?
+    True  = a mapped location of the brand matches the address
+    False = the brand IS mapped in this city, but not at this address
+    None  = OpenStreetMap has no locations for the brand here, so it can't confirm or deny"""
+    addr = listing.get("address") or ""
+    city = next((c for c in CITIES if c.lower() in addr.lower()), "")
+    names = OSM_NAMES.get((listing.get("brand") or "").lower(), [display])
+    results = []
+    try:
+        for n in names:
+            results += _nominatim(f"{n} {city}".strip(), email)
+    except Exception as e:
+        return None, f"OpenStreetMap could not be checked ({type(e).__name__})."
+    brand_toks = set().union(*(toks(n) for n in names)) or toks(display)
+    mapped = [r for r in results if brand_toks & toks(f"{r.get('name', '')} {r.get('display_name', '')}")]
+    if not mapped:
+        return None, (f"OpenStreetMap has no mapped {display} locations{' in ' + city if city else ''}, "
+                      "so it can neither confirm nor rule out this listing.")
+    lt = toks(addr)
+    for r in mapped:
+        if len(lt & (toks(r.get("display_name")) - brand_toks)) >= 2:
+            return True, f"OpenStreetMap shows a {display} location at this address."
+    return False, (f"OpenStreetMap maps {len(mapped)} {display} location(s){' in ' + city if city else ''}, "
+                   "but none at this address.")
 
 
 def web_check(listing, key):
@@ -209,6 +232,9 @@ def decide(sig, phone_verdict, display):
                                  f"{display}'s official information.")
     if n == 0 and ("phone_in_official" in agree or "address_in_branches" in agree):
         return n, "genuine", f"Consistent with {display}'s official information on every check made."
+    if disagree == ["found_in_osm"] and "phone_in_official" in agree:
+        return n, "genuine", (f"The phone is {display}'s published helpline. It is missing from OpenStreetMap, "
+                              "but map coverage in the UAE is incomplete, so that alone is not a warning sign.")
     if n == 0:
         return n, "unverified", "Nothing contradicts this listing, but not enough could be checked to clear it."
     return n, "suspicious", f"{n} check(s) disagree with {display}'s official information. Call the number on {display}'s own website instead."
