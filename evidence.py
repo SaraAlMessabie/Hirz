@@ -4,8 +4,8 @@ Evidence package (Task 4).
   build(check_response) -> dict      bundle with a chain-of-custody hash
   verify(bundle) -> bool             recompute bundle_sha256
 
-  python evidence.py <url>           calls POST /check, writes evidence/<id>.json,
-                                     <id>.pdf (English) and <id>_ar.pdf (Arabic)
+  python evidence.py <url>           calls POST /check, writes evidence/<id>.json and
+                                     <id>.pdf (page 1 English, page 2 Arabic)
   python evidence.py --verify evidence/<id>.json
 
 Options:  --api http://127.0.0.1:8000   where api.py is running
@@ -375,42 +375,42 @@ REASON_AR = {
 }
 
 
-def _latin1(s):
-    """Fallback for fpdf2 core fonts (Latin-1 only) if the bundled font is missing."""
-    s = str(s if s is not None else "")
-    for a, c in {"—": "-", "–": "-", "’": "'", "‘": "'", "“": '"', "”": '"', "…": "...", "✓": "+"}.items():
-        s = s.replace(a, c)
-    return s.encode("latin-1", "replace").decode("latin-1")
+HEADER_BG = ASSETS / "header_bg.png"
+LOGO_SOFT = ASSETS / "hirz_logo_soft.png"
+CYAN = (8, 145, 178)                     # print-safe version of the slide's glow colour
+UAE = [(0, 115, 47), (255, 255, 255), (0, 0, 0), (206, 17, 38)]
 
 
-def render_pdf(b: dict, path, lang: str = "en"):
-    """One-page report. lang='en' or 'ar' (Arabic, right-to-left)."""
+def render_pdf(b: dict, path):
+    """One PDF: page 1 English, page 2 Arabic (right-to-left)."""
     from fpdf import FPDF
-    from arabic_text import visual
-
-    L10N, rtl = T[lang], lang == "ar"
     pdf = FPDF(format="A4")
     pdf.set_auto_page_break(False)
     pdf.set_margins(14, 12, 14)
-    unicode_font = FONT_REG.exists() and FONT_BOLD.exists()
-    if unicode_font:
-        pdf.add_font("Hirz", "", str(FONT_REG))
-        pdf.add_font("Hirz", "B", str(FONT_BOLD))
-        family = "Hirz"
-    elif rtl:
-        raise RuntimeError("Arabic report needs assets/fonts/DejaVuSans*.ttf")
-    else:
-        family = "Helvetica"
+    if not (FONT_REG.exists() and FONT_BOLD.exists()):
+        raise RuntimeError("Missing assets/fonts/DejaVuSans*.ttf (needed for Arabic)")
+    pdf.add_font("Hirz", "", str(FONT_REG))
+    pdf.add_font("Hirz", "B", str(FONT_BOLD))
+    for page, lang in enumerate(("en", "ar"), 1):
+        _render_page(pdf, b, lang, page)
+    pdf.output(str(path))
+    return str(path)
+
+
+def _render_page(pdf, b, lang, page_no, pages=2):
+    from arabic_text import visual
+    L10N, rtl = T[lang], lang == "ar"
     pdf.add_page()
     W, L = pdf.w - pdf.l_margin - pdf.r_margin, pdf.l_margin
-    clean = (lambda s: str(s if s is not None else "")) if unicode_font else _latin1
+    R = L + W
+    show = (lambda s: visual(str(s))) if rtl else str
 
     def font(size, style=""):
-        pdf.set_font(family, "B" if "B" in style else "", size)
+        pdf.set_font("Hirz", "B" if "B" in style else "", size)
 
     def wrap(text, width):
         words, lines, cur = [], [], ""
-        for w in clean(text).split(" "):          # hard-split anything wider than a line (long URLs)
+        for w in str(text if text is not None else "").split(" "):   # hard-split long URLs
             while pdf.get_string_width(w) > width and len(w) > 1:
                 k = len(w)
                 while k > 1 and pdf.get_string_width(w[:k]) > width:
@@ -425,11 +425,11 @@ def render_pdf(b: dict, path, lang: str = "en"):
                 cur = t
         return lines + [cur]
 
-    def para(text, size=10, style="", h=5, color=(30, 30, 30), x=None, width=None, ltr=False):
+    def para(text, size=10, style="", h=5, color=(30, 30, 30), ltr=False, indent=0):
         font(size, style)
         pdf.set_text_color(*color)
-        x, width = (L if x is None else x), (W if width is None else width)
         y = pdf.get_y()
+        x, width = (L, W - indent) if rtl else (L + indent, W - indent)
         for line in wrap(text, width):
             pdf.set_xy(x, y)
             if rtl and not ltr:
@@ -439,66 +439,88 @@ def render_pdf(b: dict, path, lang: str = "en"):
             y += h
         pdf.set_xy(L, y)
 
+    def heading(text):
+        y = pdf.get_y() + 1
+        pdf.set_fill_color(*CYAN)
+        pdf.rect(R - 1.2 if rtl else L, y + 1, 1.2, 4.6, "F")      # accent bar on the reading side
+        pdf.set_xy(L, y)
+        para(text, 12, "B", 6.5, (15, 23, 42), indent=3.5)
+
     v = b.get("verdict") if b.get("verdict") in VERDICT_COLOR else "unknown"
     vcol = VERDICT_COLOR[v]
+    score = b.get("score") if isinstance(b.get("score"), (int, float)) else None
 
-    # ---- header: navy band with the Hirz logo, verdict in its colour
-    pdf.set_fill_color(*NAVY)
-    pdf.rect(0, 0, pdf.w, 38, "F")
-    pdf.set_fill_color(*vcol)
-    pdf.rect(0, 38, pdf.w, 2.5, "F")
-    logo_h = 32
-    if LOGO.exists():
-        from PIL import Image
-        with Image.open(LOGO) as im:
-            logo_w = logo_h * im.width / im.height
-        pdf.image(str(LOGO), x=(pdf.w - pdf.r_margin - logo_w) if rtl else L, y=3, w=logo_w, h=logo_h)
+    # ---- header: network band, soft logo, verdict + meter, corner marks
+    if HEADER_BG.exists():
+        pdf.image(str(HEADER_BG), x=0, y=0, w=pdf.w, h=40)
     else:
-        logo_w = 0
-    tx, tw = (L, W - logo_w - 6) if rtl else (L + logo_w + 6, W - logo_w - 6)
-    align = "L" if rtl else "R"          # text sits on the side away from the logo
-    word = L10N["verdict"][v]
+        pdf.set_fill_color(*NAVY); pdf.rect(0, 0, pdf.w, 40, "F")
+    logo_h, logo_w = 34, 0
+    logo = LOGO_SOFT if LOGO_SOFT.exists() else LOGO
+    if logo.exists():
+        from PIL import Image
+        with Image.open(logo) as im:
+            logo_w = logo_h * im.width / im.height
+        pdf.image(str(logo), x=(R - logo_w) if rtl else L - 2, y=3, w=logo_w, h=logo_h)
+    pdf.set_draw_color(226, 232, 240); pdf.set_line_width(0.5)
+    for cx, sign in ((4, 1), (pdf.w - 4, -1)):                     # "////" corner marks from the slide
+        for k in range(4):
+            x0 = cx + sign * k * 1.6
+            pdf.line(x0, 7, x0 + sign * 1.2, 4)
+    tx, tw = (L, W - logo_w - 4) if rtl else (L + logo_w + 2, W - logo_w - 2)
+    align = "L" if rtl else "R"
     font(24, "B"); pdf.set_text_color(*vcol); pdf.set_xy(tx, 6)
-    pdf.cell(tw, 12, visual(word) if rtl else clean(word), align=align)
-    font(13, "B"); pdf.set_text_color(255, 255, 255); pdf.set_xy(tx, 19)
-    score_txt = f"{L10N['score']} {b.get('score', '-')}/100"
-    pdf.cell(tw, 7, visual(score_txt) if rtl else clean(score_txt), align=align)
-    font(8); pdf.set_text_color(190, 200, 215); pdf.set_xy(tx, 28)
-    sub = f"{L10N['title']}  {b['evidence_id']}  ·  {L10N['captured']} {b['captured_at']} UTC"
-    pdf.cell(tw, 5, visual(sub) if rtl else clean(sub), align=align)
-    pdf.set_xy(L, 46)
+    pdf.cell(tw, 12, show(L10N["verdict"][v]), align=align)
+    font(12, "B"); pdf.set_text_color(255, 255, 255); pdf.set_xy(tx, 18.5)
+    pdf.cell(tw, 6, show(f"{L10N['score']} {b.get('score', '-')}/100"), align=align)
+    mw = 46                                                          # score meter, like the web page
+    mx = tx if rtl else tx + tw - mw
+    pdf.set_fill_color(51, 65, 85); pdf.rect(mx, 26.3, mw, 1.8, "F")
+    if score is not None:
+        fill = mw * max(0, min(100, score)) / 100
+        pdf.set_fill_color(*vcol); pdf.rect(mx + mw - fill if rtl else mx, 26.3, fill, 1.8, "F")
+    font(7.5); pdf.set_text_color(190, 205, 222); pdf.set_xy(tx, 30.5)
+    pdf.cell(tw, 4.5, show(f"{L10N['title']}  {b['evidence_id']}  ·  {L10N['captured']} {b['captured_at']} UTC"),
+             align=align)
+    seg = pdf.w / 4                                                  # UAE-flag stripe, as on the logo
+    for i, col in enumerate(reversed(UAE) if rtl else UAE):
+        pdf.set_fill_color(*col); pdf.rect(i * seg, 40, seg, 1.6, "F")
+    pdf.set_draw_color(220, 220, 220); pdf.set_line_width(0.2)
+    pdf.line(0, 41.6, pdf.w, 41.6)
+    pdf.set_xy(L, 47)
 
     # ---- body
-    para(L10N["link"], 9, "B", 5, (90, 90, 90))
-    para(b.get("url"), 11, "B", 5.5, ltr=True) if not rtl else para(b.get("url"), 11, "B", 5.5)
+    para(L10N["link"], 9, "B", 5, (100, 116, 139))
+    para(b.get("url"), 11, "B", 5.5, ltr=not rtl)
     if b.get("host"):
-        para(f"{L10N['real']}: {b.get('reg_domain')}   ({L10N['full']}: {b.get('host')})", 9, "", 5, (70, 70, 70))
+        para(f"{L10N['real']}: {b.get('reg_domain')}   ({L10N['full']}: {b.get('host')})", 9, "", 5, (71, 85, 105))
     pdf.ln(2)
     para(L10N["meaning"][v], 11, "", 5.5)
-    pdf.ln(2)
+    pdf.ln(1)
 
-    para(L10N["why"], 12, "B", 6)
+    heading(L10N["why"])
     reasons = b.get("reasons") or []
     if not reasons:
         para(L10N["none"], 10)
     for r in reasons:
         mark = "✓" if r.get("direction") == "safe" else "•"
         text = (REASON_AR.get(r.get("code")) if rtl else None) or r.get("text") or r.get("code")
-        para(f"{mark}  {text}", 11, "", 6)
-    pdf.ln(2)
+        para(f"{mark}  {text}", 11, "", 6, indent=3.5)
+    pdf.ln(1)
 
-    para(L10N["shot"], 12, "B", 6)
+    heading(L10N["shot"])
     shot = b.get("screenshot_path")
     if shot and pathlib.Path(shot).exists():
         y, sw = pdf.get_y(), W * 0.55
-        pdf.image(shot, x=(L + W - sw) if rtl else L, y=y, w=sw, h=62, keep_aspect_ratio=True)
+        pdf.image(shot, x=(R - sw) if rtl else L, y=y, w=sw, h=62, keep_aspect_ratio=True)
         pdf.set_xy(L, y + 64)
-        para(L10N.get("shot_ok") if rtl else b.get("screenshot_note"), 8, "", 4, (90, 90, 90))
+        para(L10N.get("shot_ok") if rtl else b.get("screenshot_note"), 8, "", 4, (100, 116, 139), indent=3.5)
     else:
-        para(L10N["noshot"] or b.get("screenshot_note") or "No screenshot captured.", 9, "", 5, (90, 90, 90))
-    pdf.ln(2)
+        para(L10N["noshot"] or b.get("screenshot_note") or "No screenshot captured.", 9, "", 5,
+             (100, 116, 139), indent=3.5)
+    pdf.ln(1)
 
-    para(L10N["report"], 12, "B", 6)
+    heading(L10N["report"])
     for t in b.get("takedown") or []:
         if t.get("rank") == 4 and not t.get("applies"):
             continue
@@ -508,14 +530,14 @@ def render_pdf(b: dict, path, lang: str = "en"):
             name = L10N["targets"].get(key, name)
         note = L10N["notes"].get(t.get("note"), t.get("note")) if rtl else t.get("note")
         bits = [t.get("name") if t["rank"] in (1, 2) else "", t.get("email"), t.get("phone"), t.get("url"), note]
-        para(f"{t['rank']}. {name}: " + "  ".join(x for x in bits if x), 9, "", 4.6)
+        para(f"{t['rank']}. {name}: " + "  ".join(x for x in bits if x), 9, "", 4.6, indent=3.5)
     pdf.ln(2)
 
-    # ---- technical appendix (always English: identifiers, hashes, dates)
-    pdf.set_draw_color(200, 200, 200)
-    pdf.line(L, pdf.get_y(), L + W, pdf.get_y())
+    # ---- technical appendix (English on both pages: identifiers, hashes, dates)
+    pdf.set_draw_color(203, 213, 225); pdf.set_line_width(0.2)
+    pdf.line(L, pdf.get_y(), R, pdf.get_y())
     pdf.ln(1.5)
-    para(L10N["appendix"], 10, "B", 5)
+    para(L10N["appendix"], 10, "B", 5, (15, 23, 42))
     reg, cert, host = b.get("registration") or {}, b.get("certificate") or {}, b.get("hosting") or {}
     lines = []
     if reg.get("found"):
@@ -541,11 +563,17 @@ def render_pdf(b: dict, path, lang: str = "en"):
     lines.append(f"Checked {b.get('checked_at')}; evidence captured {b.get('captured_at')} (UTC)")
     lines.append(f"Bundle SHA-256 (chain of custody, over the canonical JSON of all other fields): {b['bundle_sha256']}")
     for line in lines:
-        para(line, 7.5, "", 3.8, (60, 60, 60), ltr=True)
-    para(L10N["disclaimer"], 7.5, "", 3.8, (110, 110, 110))
-    para("Verify: python evidence.py --verify <file>.json", 7, "", 3.6, (130, 130, 130), ltr=True)
-    pdf.output(str(path))
-    return str(path)
+        para(line, 7.5, "", 3.8, (71, 85, 105), ltr=True)
+    para(L10N["disclaimer"], 7.5, "", 3.8, (100, 116, 139))
+
+    # ---- footer
+    pdf.set_draw_color(*CYAN); pdf.set_line_width(0.4)
+    pdf.line(L, 284, R, 284)
+    font(7.5); pdf.set_text_color(100, 116, 139)
+    pdf.set_xy(L, 285.5)
+    pdf.cell(W / 2, 4, f"Hirz  |  {b['evidence_id']}  |  verify: python evidence.py --verify {b['evidence_id']}.json")
+    pdf.set_xy(L + W / 2, 285.5)
+    pdf.cell(W / 2, 4, visual(f"حرز  ·  {page_no}/{pages}"), align="R")
 
 
 # ---------------------------------------------------------------- CLI
@@ -574,11 +602,10 @@ def main():
     OUT.mkdir(exist_ok=True)
     jpath = OUT / f"{b['evidence_id']}.json"
     jpath.write_text(json.dumps(b, indent=2, ensure_ascii=False), "utf-8")
-    ppath = render_pdf(b, OUT / f"{b['evidence_id']}.pdf", "en")
-    ppath_ar = render_pdf(b, OUT / f"{b['evidence_id']}_ar.pdf", "ar")
+    ppath = render_pdf(b, OUT / f"{b['evidence_id']}.pdf")
     reg = b["takedown"][0]
     print(f"{b['verdict'].upper()} ({b['score']}/100)  {b['url']}")
-    print(f"  JSON  {jpath}\n  PDF   {ppath}  (English)\n  PDF   {ppath_ar}  (Arabic)")
+    print(f"  JSON  {jpath}\n  PDF   {ppath}  (page 1 English, page 2 Arabic)")
     print(f"  registrar abuse: {reg['name']}  {reg.get('email') or reg.get('note')}")
     print(f"  screenshot: {b['screenshot_path'] or b['screenshot_note']}")
     print(f"  bundle_sha256 {b['bundle_sha256']}  (verify: python evidence.py --verify {jpath})")
