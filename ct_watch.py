@@ -12,7 +12,7 @@ OUT  = pathlib.Path("data/ct_hits.csv")
 SEEN = pathlib.Path("data/ct_seen.json")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; scam-detect-research/0.1)"}
 
-HOURS_BACK = 720
+HOURS_BACK = 8760                 # exclude=expired already drops the old ones
 API = "http://127.0.0.1:8000/check"
 
 TERMS = ["adcb", "emiratesnbd", "aramex", "uaepass", "emiratespost",
@@ -23,8 +23,7 @@ def reg_of(host):
     return f"{e.domain}.{e.suffix}" if e.domain and e.suffix else host
 
 def is_brand_own(reg, term):
-    """aramex.com / aramex.ae / aramex.co.uk -> the real brand.
-       aramex-delivery.xyz / secure-aramex.com -> not."""
+    """aramex.com / aramex.ae -> real brand.  aramex-delivery.xyz -> not."""
     return tldextract.extract(reg).domain == term
 
 def load_seen():
@@ -47,7 +46,8 @@ def query(pattern, tries=3):
     for i in range(tries):
         try:
             r = httpx.get("https://crt.sh/", headers=UA, timeout=60,
-                          params={"q": pattern, "output": "json"})
+                          params={"q": pattern, "output": "json",
+                                  "exclude": "expired"})
             if r.status_code == 200 and r.text.strip():
                 return r.json()
             if r.status_code in (502, 503):
@@ -71,7 +71,8 @@ def scan():
 
     for term in TERMS:
         n_certs = n_recent = n_own = n_new = 0
-        # hyphen patterns catch look-alikes, not the brand's own infrastructure
+        dates = []
+
         for pattern in (f"%{term}-%", f"%-{term}%", f"%{term}%"):
             for c in query(pattern):
                 n_certs += 1
@@ -80,6 +81,7 @@ def scan():
                     issued = datetime.fromisoformat(nb).replace(tzinfo=timezone.utc)
                 except ValueError:
                     continue
+                dates.append(issued)
                 if issued < cutoff:
                     continue
                 n_recent += 1
@@ -106,8 +108,9 @@ def scan():
                     })
             time.sleep(3)
 
+        span = f"{min(dates).date()}..{max(dates).date()}" if dates else "none"
         print(f"  {term:14} certs {n_certs:>6}  recent {n_recent:>5}  "
-              f"brand-own {n_own:>5}  NEW {n_new:>4}")
+              f"own {n_own:>5}  NEW {n_new:>4}   {span}")
 
     SEEN.write_text(json.dumps(sorted(seen)), "utf-8")
     if not rows:
