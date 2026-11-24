@@ -75,6 +75,9 @@
 </header>
 
 <main>
+  <div id="banner" style="display:none;background:#fdeaea;border:1px solid #f0c4c2;
+       color:#8a2420;border-radius:9px;padding:11px 14px;margin-bottom:14px;
+       font-size:13px"></div>
   <div class="stats" id="stats"></div>
 
   <div class="bar">
@@ -143,8 +146,15 @@ async function loadDetections(){
   if (b) p.set("brand", b);
   if (s) p.set("source", s);
 
-  const d = await (await fetch(API + "/detections?" + p)).json();
-  rows = d.items;
+  let d;
+  try{
+    d = await getJSON("/detections?" + p);
+  }catch(e){
+    document.getElementById("rows").innerHTML =
+      `<tr><td colspan="6" class="muted">${e.message}</td></tr>`;
+    return;
+  }
+  rows = d.items || [];
   document.getElementById("count").textContent = `— ${d.showing} of ${d.total}`;
   document.getElementById("rows").innerHTML = rows.length ? rows.map((r,i) => `
     <tr onclick="pick(${i})" id="r${i}">
