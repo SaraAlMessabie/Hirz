@@ -265,7 +265,7 @@
     msg.className = "msg";
     msg.textContent = "Collecting registration, certificate and hosting details — about 10–30 seconds.";
     try {
-      const r = await fetch(EVIDENCE + "/evidence", {
+      const r = await fetch(EVIDENCE + "/api/evidence", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: lastUrl }),
       });
@@ -284,7 +284,7 @@
       btn.textContent = "Download evidence report (PDF)";
       msg.className = "msg err";
       msg.textContent = (err instanceof TypeError)
-        ? "Report service not reachable at " + EVIDENCE + ". Start it with: python -m uvicorn evidence_server:app --port 8001"
+        ? "Report service not reachable at " + EVIDENCE + ". Start it with: python -m uvicorn hirz_server:app --port 8001"
         : err.message;
     } finally {
       btn.disabled = false;

@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f9fd">
+<title>Hirz — your safeguard against scams</title>
+<style>
+
+  :root {
+    --bg: #0b1629; --bg2: #0e2340; --card: #12233b; --line: #1f3656;
+    --text: #e8eef9; --muted: #93a8c4; --cyan: #38bdf8;
+    --red: #e63946;   --red-bg: #2b1219;
+    --amber: #f59e0b; --amber-bg: #2a2010;
+    --green: #22c55e; --green-bg: #0f2418;
+    --grey: #94a3b8;  --grey-bg: #18243a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; color: var(--text);
+    background: radial-gradient(120% 60% at 50% 0%, var(--bg2) 0%, var(--bg) 60%) fixed, var(--bg);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif; }
+  html[dir=rtl] body { line-height: 1.6; }
+  .phone { max-width: 390px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; }
+
+  .hero { position: relative; height: 150px; overflow: hidden;
+    background: #0b1629 url("img/header_bg.jpg") center bottom / cover no-repeat; }
+  .hero img { position: absolute; left: 50%; top: 6px; height: 120px; transform: translateX(-50%);
+    filter: drop-shadow(0 0 18px rgba(56,189,248,.25)); }
+  .hero .tag { position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 13px; color: #cfe3f7; }
+  .marks { position: absolute; top: 12px; display: flex; gap: 3px; }
+  .marks i { width: 4px; height: 10px; background: #e2e8f0; transform: skewX(-30deg); border-radius: 1px; }
+  .marks.l { left: 14px; } .marks.r { right: 14px; }
+  .flag { display: flex; height: 4px; }
+  .flag i { flex: 1; } .flag i:nth-child(1){background:#00732f} .flag i:nth-child(2){background:#fff}
+  .flag i:nth-child(3){background:#000} .flag i:nth-child(4){background:#ce1126}
+  html[dir=rtl] .flag { flex-direction: row-reverse; }
+
+  .langbar { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 18px 0; }
+  .langbar button { padding: 6px 11px; font-size: 13.5px; font-weight: 600; border-radius: 999px;
+    background: rgba(18,35,59,.9); color: var(--text); border: 1px solid var(--line); display: inline-flex; align-items: center; gap: 6px; }
+  .langbar button svg { width: 16px; height: 16px; }
+  .langbar #lang { border-color: #2b6496; color: #cfe9ff; }
+  .toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); max-width: 340px; z-index: 10;
+    background: #1b3a5e; color: #e8f4ff; border: 1px solid #2b6496; border-radius: 12px; padding: 10px 14px;
+    font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .toast.on { opacity: 1; }
+
+  .banner { display: none; margin: 10px 18px 0; padding: 10px 12px; border-radius: 10px; font-size: 13.5px;
+    background: var(--amber-bg); border: 1px solid #5a4410; color: #fcd34d; overflow-wrap: anywhere; }
+  .banner.on { display: block; }
+
+  main { padding: 12px 18px 0; }
+  .panel { display: none; } .panel.on { display: block; }
+  h1 { font-size: 21px; margin: 0 0 2px; }
+  .lead { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+
+  form { display: flex; flex-direction: column; gap: 10px; }
+  label.f { font-size: 13px; color: var(--muted); margin-bottom: -6px; }
+  input, select {
+    width: 100%; padding: 13px 14px; font: inherit; font-size: 16px; color: var(--text);
+    background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; outline: none;
+  }
+  input[dir=ltr] { text-align: left; }
+  html[dir=rtl] input[dir=ltr]::placeholder { text-align: right; }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; }
+  html[dir=rtl] select { background-position: 20px 55%, 14px 55%; }
+  input:focus, select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56,189,248,.18); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 14px; cursor: pointer;
+    color: #04121f; background: linear-gradient(180deg, #5ccdfb, #22a6e0);
+  }
+  button:disabled { opacity: .6; cursor: wait; }
+  .ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .danger { background: var(--red); color: #fff; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin-bottom: 14px;
+    background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; }
+  .seg button { padding: 9px; font-size: 14px; background: transparent; color: var(--muted); border-radius: 9px; }
+  .seg button.on { background: #1b3a5e; color: var(--text); }
+
+  .spinner { display: none; align-items: center; gap: 10px; color: var(--muted); margin-top: 16px; font-size: 14px; }
+  .spinner.on { display: flex; }
+  .spinner i { flex: none; width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--line); border-top-color: var(--cyan); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { display: none; margin-top: 16px; padding: 12px 14px; border-radius: 12px; overflow-wrap: anywhere;
+    background: var(--grey-bg); border: 1px solid var(--line); font-size: 14px; }
+  .error.on { display: block; }
+
+  .result { margin-top: 18px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--card); }
+  .result[hidden] { display: none; }
+  .verdict { padding: 20px 18px 16px; text-align: center; }
+  .verdict .word { font-size: 34px; font-weight: 800; letter-spacing: .6px; line-height: 1.15; }
+  html[dir=rtl] .verdict .word { letter-spacing: 0; }
+  .verdict .sub { margin-top: 6px; font-size: 15px; }
+  .verdict .score { margin-top: 10px; font-size: 14px; color: var(--muted); }
+  .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); margin: 8px auto 0; max-width: 240px; overflow: hidden; display: flex; }
+  .bar b { display: block; height: 100%; width: 0; transition: width .6s ease; }
+  .v-red   { background: var(--red-bg); }   .v-red   .word, .v-red   .sub { color: var(--red); }   .v-red   .bar b { background: var(--red); }
+  .v-amber { background: var(--amber-bg); } .v-amber .word, .v-amber .sub { color: var(--amber); } .v-amber .bar b { background: var(--amber); }
+  .v-green { background: var(--green-bg); } .v-green .word, .v-green .sub { color: var(--green); } .v-green .bar b { background: var(--green); }
+  .v-grey  { background: var(--grey-bg); }  .v-grey  .word, .v-grey  .sub { color: var(--grey); }  .v-grey  .bar b { background: var(--grey); }
+
+  .body { padding: 16px 18px 18px; }
+  .host { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; margin-bottom: 12px; }
+  .host b { color: var(--text); font-weight: 600; }
+  h2 { font-size: 15px; margin: 0 0 8px; padding-inline-start: 9px; border-inline-start: 3px solid var(--cyan); }
+  ul.reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.reasons li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; font-size: 15px;
+    background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; overflow-wrap: anywhere; }
+  .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .risk .dot, .dot.no { background: var(--red-bg); color: var(--red); }
+  .safe .dot, .dot.yes { background: var(--green-bg); color: var(--green); }
+  .neutral .dot, .dot.na { background: var(--grey-bg); color: var(--grey); }
+  .empty { color: var(--muted); font-size: 14px; }
+  .note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+
+  .signals { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .signals div { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+  .signals small { color: var(--muted); margin-inline-start: auto; text-align: end; }
+
+  .actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .evidence, .proceed { display: none; flex-direction: column; gap: 8px; }
+  .evidence.on, .proceed.on { display: flex; }
+  .evidence button { background: linear-gradient(180deg, #1d4f7a, #163d61); color: #e8f4ff; border: 1px solid #2b6496; }
+  .msg { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .msg.err { color: #fca5a5; }
+  .proceed .warn { display: none; font-size: 14px; color: var(--red); background: var(--red-bg);
+    border: 1px solid #5b1d22; border-radius: 10px; padding: 10px 12px; }
+  .proceed .warn.on { display: block; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
+  .item > button { width: 100%; text-align: start; background: transparent; color: var(--text); padding: 12px 14px;
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; border-radius: 0; font-weight: 500; }
+  .item .nm { font-weight: 600; font-size: 15px; }
+  .item .meta { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+  .chip { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 11.5px; font-weight: 700;
+    padding: 4px 8px; border-radius: 999px; letter-spacing: .3px; white-space: nowrap; }
+  .chip.red { background: var(--red-bg); color: var(--red); } .chip.amber { background: var(--amber-bg); color: var(--amber); }
+  .chip.green { background: var(--green-bg); color: var(--green); } .chip.grey { background: var(--grey-bg); color: var(--grey); }
+  .badge { font-size: 10.5px; color: #c4b5fd; border: 1px solid #4c3d8f; border-radius: 6px; padding: 0 5px; margin-inline-start: 6px; white-space: nowrap; }
+  .item .detail { display: none; padding: 0 14px 14px; }
+  .item.open .detail { display: block; }
+
+  nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center;
+    background: rgba(9,18,34,.96); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  nav.tabs .inner { width: 100%; max-width: 390px; display: grid; grid-template-columns: repeat(3, 1fr); }
+  nav.tabs button { background: transparent; color: var(--muted); border-radius: 0; padding: 9px 4px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 600; }
+  nav.tabs button svg { width: 22px; height: 22px; }
+  nav.tabs button.on { color: var(--cyan); box-shadow: inset 0 2px 0 var(--cyan); }
+  footer { margin-top: 22px; padding: 0 18px; font-size: 12px; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+
+/* ================================================================
+   HIRZ LIGHT EXPERIENCE · Mobile-first visual redesign
+   UI-only additions; original API routes and logic are preserved.
+   ================================================================ */
+:root {
+  color-scheme: light;
+  --bg: #f5f9fd; --bg2: #edf5fb; --card: #ffffff; --line: #dce6f0;
+  --text: #17324a; --muted: #647b90; --cyan: #117db9;
+  --red: #c9334e; --red-bg: #fff0f2;
+  --amber: #a76b0a; --amber-bg: #fff6e3;
+  --green: #138457; --green-bg: #e6f8ef;
+  --grey: #5c7082; --grey-bg: #edf2f6;
+  --blue-bg: #e9f4ff;
+}
+html, body { background: linear-gradient(155deg,#f7fbff 0%,#f1f7fc 60%,#ffffff 100%) fixed; color:var(--text); }
+body { font-size:16px; }
+.phone { max-width:440px; background:transparent; min-height:100dvh; padding-bottom:104px; }
+.hero { height:116px; padding:18px 20px 16px; background:linear-gradient(114deg,#fafdff,#eaf5ff); border-bottom:1px solid #dceaf4; overflow:hidden; }
+.hero-inner { display:flex; align-items:center; gap:14px; max-width:400px; margin:0 auto; position:relative; z-index:1; }
+.hero .brand-image { position:static; transform:none; width:76px; height:76px; object-fit:cover; object-position:center; border-radius:20px; filter:none; border:2px solid #ffffff; box-shadow:0 6px 20px #1f5d8b24; }
+.hero-copy { min-width:0; flex:1; }
+.hero-name { font-size:22px; line-height:1.15; font-weight:850; color:#0f476f; letter-spacing:-.35px; }
+.hero-name span { font-size:19px; padding-inline-start:5px; color:#2383b8; }
+.hero-title { margin-top:5px; color:#335d7a; font-size:13px; font-weight:650; line-height:1.3; }
+.hero .tag { position:static; width:auto; text-align:start; font-size:11px; margin-top:4px; color:#6a8ca4; }
+.hero-decor { position:absolute; width:130px; height:130px; right:-72px; top:-58px; border:20px solid #d2ecfc; border-radius:50%; opacity:.55; }
+.flag { height:3px; }
+.langbar { padding:13px 20px 3px; }
+.langbar button { background:#fff; border:1px solid #deebf5; color:#44677f; border-radius:999px; padding:8px 12px; font-size:12px; box-shadow:0 2px 8px #18456b09; }
+.langbar #lang { border-color:#b0d9f0; background:#eaf6ff; color:#12669a; }
+main { padding:17px 20px 0; }
+h1 { font-size:23px; font-weight:800; line-height:1.25; letter-spacing:-.4px; margin:0 0 6px; color:#0f3554; }
+.lead { color:#617c92; font-size:14px; line-height:1.65; margin-bottom:19px; }
+h2 { color:#1a4667; }
+form { gap:12px; }
+label.f { font-size:13px; font-weight:700; color:#42647f; margin-bottom:-7px; }
+input, select { background:#fff; border:1.5px solid #d9e5ee; color:#18384f; min-height:51px; border-radius:14px; box-shadow:0 2px 7px #22516f05; }
+input::placeholder { color:#93a7b8; }
+input:focus, select:focus { border-color:#348fc6; box-shadow:0 0 0 4px #2b9ed519; }
+button { background:#147eb8; color:#fff; border-radius:14px; min-height:49px; font-size:15px; box-shadow:0 5px 13px #126ca01c; transition:background .15s ease, transform .15s ease; }
+button:active { transform:scale(.99); }
+button:focus-visible, .action-tile:focus-visible { outline:3px solid #38bdf8; outline-offset:2px; }
+.ghost { background:#fff; color:#145e91; border:1px solid #b8d7eb; box-shadow:none; }
+.danger { background:#c9334e; color:#fff; }
+.seg { background:#eaf1f7; border:1px solid #dfe9f1; border-radius:14px; }
+.seg button { color:#627f96; box-shadow:none; min-height:40px; }
+.seg button.on { background:#fff; color:#135b88; box-shadow:0 2px 10px #132f4814; }
+.spinner { color:var(--muted); }
+.error { background:#fff3f3; border:1px solid #f3c8cb; color:#9a2d42; }
+.banner { background:#fff8e8; border:1px solid #eedab2; color:#815b22; border-radius:14px; font-size:12.5px; padding:11px 14px; margin:12px 20px 0; line-height:1.5; }
+.toast.on { background:#173c58; color:#fff; border-color:#1f628f; box-shadow:0 8px 22px #102d4e20; }
+.result { background:#fff; border:1px solid #dce7ef; border-radius:18px; box-shadow:0 6px 22px #193c5911; }
+.verdict { padding:23px 16px; }
+.verdict .word { font-size:29px; letter-spacing:-.2px; }
+.verdict .sub { font-size:14px; line-height:1.55; }
+.bar { background:#ffffffaa; }
+.v-blue { background:var(--blue-bg); }
+.v-blue .word,.v-blue .sub { color:#196f9f; }
+.v-blue .bar b { background:#2b8fbb; }
+.body { padding:17px 18px 20px; }
+ul.reasons li { background:#f8fafc; border:1px solid #e4ebf1; }
+.evidence button { background:#edf7ff; color:#116ba4; border:1px solid #c3dfef; }
+.proceed .warn { border-color:#f4c6cf; }
+.item { background:#fff; border:1px solid #dce7ef; border-radius:16px; box-shadow:0 4px 14px #193c590b; }
+.item > button { color:var(--text); box-shadow:none; }
+.chip.red { background:var(--red-bg); color:var(--red); }
+.chip.amber { background:var(--amber-bg); color:var(--amber); }
+.chip.green { background:var(--green-bg); color:var(--green); }
+.chip.grey { background:var(--grey-bg); color:var(--grey); }
+.badge { color:#6d4ca0; border-color:#d8ccea; }
+nav.tabs { background:#fffffff5; border-top:1px solid #dce6ef; box-shadow:0 -5px 24px #0a3e5e0c; }
+nav.tabs .inner { max-width:440px; grid-template-columns:repeat(4,1fr); }
+nav.tabs button { background:transparent; box-shadow:none; color:#71899a; min-height:65px; padding:10px 2px 8px; font-size:11.5px; }
+nav.tabs button.on { color:#147eb8; box-shadow:inset 0 3px 0 #1699d1; background:#eef8fe; }
+nav.tabs button svg { width:22px; height:22px; }
+footer { font-size:10.5px; opacity:.8; }
+/* Accessible home screen */
+.greeting-row { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.eyebrow { color:#2786b6; letter-spacing:1.1px; font-size:11px; font-weight:850; margin-bottom:6px; }
+.greeting-symbol { display:grid; place-items:center; width:51px; height:51px; flex:none; border-radius:17px; color:#1583b7; background:#e3f3ff; font-size:26px; }
+.home-lead { max-width:35ch; margin-bottom:18px; }
+.trust-banner { display:flex; align-items:flex-start; gap:12px; background:linear-gradient(110deg,#e4f4ff,#eef9ff); border:1px solid #d0e9f9; border-radius:18px; padding:17px; margin:0 0 24px; }
+.trust-icon { display:grid; place-items:center; flex:none; width:36px; height:36px; border-radius:12px; background:#d1eefa; color:#137cae; font-weight:900; font-size:21px; }
+.trust-banner strong { display:block; font-size:14.5px; color:#134c73; margin-bottom:3px; }
+.trust-banner span:not(.trust-icon) { display:block; font-size:12.5px; line-height:1.55; color:#527a95; }
+.section-heading { font-size:17px; font-weight:780; margin:0 0 14px; border:0; padding:0; }
+.action-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.action-tile { position:relative; display:flex; flex-direction:column; align-items:flex-start; text-align:start; min-height:163px; padding:17px 15px; background:#fff; color:#163952; border:1px solid #e0eaf2; border-radius:19px; box-shadow:0 5px 16px #1a46600b; }
+.action-tile:hover { background:#faffff; border-color:#b9dbe9; }
+.tile-icon { display:grid; place-items:center; width:43px; height:43px; border-radius:14px; background:#e9f4ff; color:#177bb8; margin-bottom:12px; }
+.tile-icon svg { width:24px; height:24px; }
+.tile-phone { background:#e7f8f2; color:#15896a; }
+.tile-listing { background:#f0ecff; color:#7760bf; }
+.tile-tip { background:#fff4e4; color:#b47a15; }
+.action-tile strong { font-size:14.5px; font-weight:780; margin-bottom:5px; }
+.action-tile small { font-size:11.5px; color:#678297; font-weight:500; line-height:1.45; max-width:18ch; }
+.tile-go { position:absolute; bottom:14px; right:15px; color:#8ba5b6; font-size:16px; }
+html[dir=rtl] .tile-go { right:auto; left:15px; }
+.tip-card { margin-top:19px; background:#fff; border:1px solid #e3ebf2; border-radius:16px; padding:15px 17px; box-shadow:0 3px 12px #1a466008; }
+.tip-card-title { display:flex; align-items:center; gap:8px; color:#174d73; font-size:14px; }
+.tip-card-title span { color:#238baf; }
+.tip-card p { margin:8px 0 0; font-size:13px; line-height:1.65; color:#58768a; }
+@media (max-width:340px) { main { padding-inline:14px; } .action-tile { padding:14px 12px; } .hero { padding-inline:14px; } h1 { font-size:21px; } }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms!important; transition-duration:.01ms!important; scroll-behavior:auto!important; } }
+
+
+/* ========================================================================
+   HIRZ MOTION UI v2 · Accessible light design with calm microinteractions
+   Visual enhancements only; existing API contracts are preserved.
+   ======================================================================== */
+:root {
+  --bg:#f5f9fc; --bg2:#f3f9fd; --card:#fff; --line:#e1eaf2;
+  --text:#15364f; --muted:#6a8499; --cyan:#147ebc;
+  --sky:#edf8ff; --azure:#267cce; --mint:#22a99e;
+  --red:#c83e58; --red-bg:#fff0f1;
+  --amber:#ae741d; --amber-bg:#fff6e5;
+  --green:#118967; --green-bg:#e6f9f0;
+  --grey:#61798a; --grey-bg:#eef3f7;
+}
+html { scroll-behavior:smooth; }
+body {
+  overflow-x:hidden;
+  background:radial-gradient(ellipse at 10% 7%,#dbf5ff 0,transparent 31%),
+             radial-gradient(ellipse at 94% 37%,#e4edff 0,transparent 31%),
+             linear-gradient(180deg,#f9fcff 0%,#f4f9fc 55%,#f9fcff 100%);
+  color:var(--text);
+  font-family:ui-sans-serif, -apple-system, BlinkMacSystemFont,"Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif;
+}
+.ambient-orb {position:fixed;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(5px);opacity:.5}
+.orb-1 {width:270px;height:270px;top:10%;left:-180px;background:#c7e9fc;animation:ambientFloat 14s ease-in-out infinite}
+.orb-2 {width:300px;height:300px;bottom:15%;right:-210px;background:#d1e4ff;animation:ambientFloat 19s ease-in-out infinite reverse}
+.phone {position:relative;max-width:440px;min-height:100dvh;padding-bottom:112px; background:rgba(255,255,255,.18);}
+.hero {position:relative;height:108px;background:rgba(255,255,255,.86); border-bottom:1px solid #e5eff5;padding:16px 20px;box-shadow:0 5px 24px #2e79aa0b;backdrop-filter:blur(14px)}
+.hero-inner {gap:13px;max-width:400px}
+.hero .brand-image {width:72px;height:72px;border-radius:23px;object-fit:cover;background:#071a2d;border:3px solid #fff;box-shadow:0 9px 22px #0b446229; animation:logoFloat 5s ease-in-out infinite;transform-origin:center}
+.hero-name {font-size:24px;letter-spacing:-.8px;font-weight:850;color:#113c5c}
+.hero-name span {font-size:20px;color:#2986c4}
+.hero-title {font-size:12.6px;color:#577d99;margin-top:5px;font-weight:650}
+.hero .tag {font-size:11.2px;color:#7195aa}
+.hero-decor {width:160px;height:160px;right:-108px;top:-94px;border:22px solid #dcf4ff;opacity:.75;animation:decorDrift 10s ease-in-out infinite}
+.brand-status {position:absolute;right:18px;top:10px;color:#27799b;font-size:9px;letter-spacing:1.3px;font-weight:900;display:flex;align-items:center;gap:6px}
+.brand-status span {width:6px;height:6px;border-radius:50%;background:#31b5a6;box-shadow:0 0 0 4px #36c4b521;animation:statusBreathe 3.5s ease-in-out infinite}
+html[dir=rtl] .brand-status {right:auto;left:18px}
+.flag {height:3px;opacity:.9}
+.langbar {padding:12px 20px 3px;position:relative;z-index:2}
+.langbar button {border-radius:999px;min-height:37px;padding:8px 12px;box-shadow:0 4px 14px #0c427809;background:#fff}
+.langbar button:hover {border-color:#b6ddf3;background:#f4fbff}
+.langbar #lang {background:#e5f5ff;border-color:#bee4f8;color:#166eab}
+main {padding:13px 20px 0}
+.panel {display:none;}
+.panel.on {display:block;animation:panelEnter .42s cubic-bezier(.2,.8,.2,1) both}
+h1 {font-size:27px;line-height:1.17;letter-spacing:-.8px;font-weight:850;color:#153c5a;margin:0 0 12px}
+html[dir=rtl] h1 {letter-spacing:0;font-size:26px;line-height:1.35}
+.lead {font-size:13.5px;color:#67849a;line-height:1.78}
+.welcome-row {display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px;margin-bottom:9px}
+.eyebrow {margin:0;font-size:10.6px;letter-spacing:1.4px;color:#268bb9;font-weight:900;display:flex;align-items:center;gap:8px}
+html[dir=rtl] .eyebrow {letter-spacing:0}
+.live-dot {width:7px;height:7px;display:inline-block;background:#28b8b6;border-radius:50%;box-shadow:0 0 0 4px #21bcb41d;animation:statusBreathe 3.2s ease-in-out infinite;flex:none}
+.ready-tag {flex:none;display:flex;align-items:center;gap:5px;border-radius:999px;background:#fff;border:1px solid #e0edf5;padding:5px 8px;color:#628197;font-size:9px;font-weight:700}
+.ready-check {background:#dcf9eb;color:#139c6c;font-size:10px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center}
+.home-lead {font-size:14px;line-height:1.7;max-width:39ch;margin:0 0 17px}
+.spotlight {position:relative;overflow:hidden;border-radius:25px;padding:22px 20px 17px;background:linear-gradient(115deg,#d8f3ff 0%,#eaf3ff 59%,#f6f6ff 100%);border:1px solid #cce8f9;box-shadow:0 12px 28px #2f83b319;margin-bottom:24px;isolation:isolate;animation:riseIn .65s ease both}
+.spotlight::after {content:"";position:absolute;top:-90px;right:-65px;width:280px;height:280px;background:radial-gradient(circle,#c4e8ff99 0%,transparent 67%);pointer-events:none;z-index:-1}
+.spotlight-glow {position:absolute;width:210px;height:210px;right:-80px;bottom:-120px;border:1px solid #badcf5;border-radius:50%;box-shadow:0 0 0 32px #d0eafe55,0 0 0 65px #e6f5ff70;animation:decorDrift 11s ease-in-out infinite;pointer-events:none}
+.spotlight-top {display:flex;align-items:center;gap:10px;justify-content:space-between;min-height:144px}
+.spotlight-copy {max-width:225px;position:relative;z-index:1}
+.spotlight-eyebrow {display:block;font-size:10px;letter-spacing:1px;font-weight:850;color:#2685b6;margin-bottom:8px}
+html[dir=rtl] .spotlight-eyebrow {letter-spacing:0}
+.spotlight-title {font-size:20px;line-height:1.23;color:#15486a;font-weight:850;margin:0 0 9px;padding:0;border:0;letter-spacing:-.3px}
+html[dir=rtl] .spotlight-title {letter-spacing:0;font-size:19px}
+.spotlight-desc {font-size:11.5px;color:#537c95;line-height:1.55;margin:0}
+.shield-scanner {width:110px;height:128px;flex:0 0 110px;position:relative;display:grid;place-items:center;animation:shieldFloat 5s ease-in-out infinite}
+.shield-art {position:relative;z-index:2;width:74px;height:82px;filter:drop-shadow(0 7px 12px #117aaf31)}
+.scan-orbit {position:absolute;inset:13px 4px;border:1px solid #6acbea7a;border-radius:50%;transform:rotate(-21deg)}
+.orbit-a {animation:orbitBreathe 4s ease-in-out infinite}
+.orbit-b {inset:27px -5px;border-color:#9ed5fd94;transform:rotate(27deg);animation:orbitBreathe 6s ease-in-out infinite reverse}
+.scan-sweep {position:absolute;top:23px;left:23px;right:23px;height:3px;border-radius:99px;z-index:3;background:linear-gradient(90deg,transparent,#23a9c4,transparent);box-shadow:0 0 13px #22abd6;animation:scanLine 3.5s ease-in-out infinite}
+.sparkle {position:absolute;color:#51b7dc;font-size:15px;z-index:3;animation:sparkleTwinkle 3.3s ease-in-out infinite}.sp-one{left:3px;top:9px}.sp-two{right:1px;bottom:10px;animation-delay:1.4s}
+.spotlight-cta {display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;width:100%;background:linear-gradient(105deg,#0c78b2,#1665c4);box-shadow:0 10px 22px #156bae2a;border-radius:15px;color:#fff;font-size:13.5px;font-weight:800;position:relative;z-index:3;transition:transform .18s ease,box-shadow .18s ease}
+.spotlight-cta:hover {transform:translateY(-2px);box-shadow:0 12px 26px #156bae3b}
+.cta-arrow {margin-inline-start:auto;font-size:20px;font-weight:400;line-height:1}
+html[dir=rtl] .cta-arrow {transform:scaleX(-1)}
+.services-top {display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 14px}
+.section-heading {font-size:17px;color:#133e5e;font-weight:850;margin:0;padding:0;border:0}
+.services-top>span {font-size:10.5px;color:#829aaa;text-align:end;white-space:nowrap}
+.action-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.action-tile {min-height:153px;border-radius:20px;border:1px solid #deebf4;background:rgba(255,255,255,.94);box-shadow:0 6px 18px #2752790b;padding:16px;isolation:isolate;animation:riseIn .6s ease both;animation-delay:var(--tile-delay,0s);transition:transform .23s cubic-bezier(.2,.8,.2,1),box-shadow .23s ease,border-color .23s ease}
+.action-tile::after {content:"";position:absolute;width:70px;height:70px;right:-32px;top:-30px;border-radius:50%;background:#e9f6ff70;z-index:-1;transition:transform .3s ease}
+.action-tile:hover {transform:translateY(-5px);box-shadow:0 13px 23px #20558220;border-color:#b9dff3;background:#fff}
+.action-tile:hover::after {transform:scale(1.5)}
+.action-tile:active {transform:scale(.975)}
+.tile-icon {width:44px;height:44px;box-shadow:0 6px 13px #0a57810b;transition:transform .22s ease}
+.action-tile:hover .tile-icon {transform:rotate(-7deg) scale(1.07)}
+.action-tile strong {font-size:13.8px;line-height:1.3;color:#183e5b}
+.action-tile small {font-size:11.2px;line-height:1.52;color:#70889b}
+.tile-go {bottom:13px;color:#529fc2;transition:transform .2s ease}
+.action-tile:hover .tile-go {transform:translate(2px,-2px)}
+html[dir=rtl] .action-tile:hover .tile-go {transform:translate(-2px,-2px)}
+.how-it-works {margin:24px 0 0;background:#ffffffa8;border:1px solid #e2ecf5;border-radius:20px;padding:17px 16px;box-shadow:0 5px 18px #2150780c}
+.how-heading {display:flex;gap:8px;align-items:center;color:#174967;font-size:14px}
+.mini-stars {font-size:22px;color:#2689c8;animation:sparkleTwinkle 3s ease-in-out infinite}
+.steps-row {display:flex;gap:5px;align-items:center;justify-content:space-around;margin-top:15px}
+.step {display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;max-width:88px;color:#557b94;font-size:10.5px;font-weight:650}
+.step-number {width:30px;height:30px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#e6f7ff,#d8eeff);color:#176ea7;font-size:13px;font-weight:900;border:1px solid #d0e9f7}
+.step-line {height:1px;flex:1;max-width:48px;background:repeating-linear-gradient(90deg,#a9d8f3 0 5px,transparent 5px 9px);margin-top:-19px}
+.tip-card {margin-top:16px;border-radius:18px;background:#fff;border:1px solid #dfeaf2;box-shadow:0 5px 14px #2050780b;padding:16px}
+.tip-card-title strong {font-size:13.6px}
+.tip-card p {font-size:12px;line-height:1.7}
+.trust-banner {border-radius:18px;margin:15px 0 4px;background:linear-gradient(115deg,#eaf9f5,#effaff);border-color:#d4ede9;padding:14px 16px}
+.trust-icon {background:#d4f3e7;color:#118967}
+.trust-banner strong {color:#16635d}
+.trust-banner span:not(.trust-icon) {color:#668999}
+/* Secondary screens */
+.panel:not(#p-home)>h1 {position:relative;margin-top:14px;padding-inline-start:15px}
+.panel:not(#p-home)>h1::before {content:"";position:absolute;inset-inline-start:0;top:5px;width:5px;height:26px;border-radius:8px;background:linear-gradient(#42c4d8,#1f82bf)}
+.panel:not(#p-home)>.lead {margin-bottom:20px}
+#p-link form,#p-number form,#l-form form {background:#fff;border:1px solid #e1ecf5;border-radius:22px;padding:18px;box-shadow:0 7px 22px #25537d0e}
+form button[type=submit] {margin-top:5px;box-shadow:0 7px 15px #196ba923}
+input,select {border-radius:13px;transition:border-color .2s ease,box-shadow .2s ease;min-height:52px}
+input:focus,select:focus {border-color:#3b9dd2;box-shadow:0 0 0 4px #a5e1fc54}
+.result {border-radius:22px;box-shadow:0 10px 24px #245b8315;animation:resultIn .5s cubic-bezier(.2,.8,.2,1) both}
+.verdict .word {font-size:29px}
+.verdict .bar b {transition:width .85s cubic-bezier(.1,.75,.2,1)}
+ul.reasons li {border-radius:13px;animation:riseIn .45s ease both}
+ul.reasons li:nth-child(2) {animation-delay:.08s}ul.reasons li:nth-child(3){animation-delay:.16s}
+.spinner.on {display:flex;background:#e9f6fe;border:1px solid #d7edfc;border-radius:13px;padding:12px 15px;animation:panelEnter .25s ease}
+.spinner i {width:22px;height:22px;border-width:3px}
+.banner.on {animation:panelEnter .25s ease}
+.item {transition:transform .2s ease,box-shadow .2s ease}
+.item:hover {transform:translateY(-2px);box-shadow:0 9px 22px #2a65801a}
+/* Elevated navigation with large, accessible touch targets */
+nav.tabs {background:#fffffff5;backdrop-filter:blur(14px);border-top:1px solid #e5edf5;box-shadow:0 -7px 24px #20578112;z-index:7;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .inner {max-width:440px;grid-template-columns:repeat(4,1fr);gap:5px;padding:7px 12px 5px}
+nav.tabs button {min-height:58px;padding:8px 2px;border-radius:15px;background:transparent;color:#7794aa;box-shadow:none;gap:4px;font-size:11px;font-weight:760}
+nav.tabs button.on {background:linear-gradient(180deg,#e7f6ff,#f2faff);box-shadow:none;color:#1177b5}
+nav.tabs button svg {width:22px;height:22px;transition:transform .24s cubic-bezier(.2,.9,.2,1)}
+nav.tabs button.on svg {transform:translateY(-2px);animation:navPop .33s ease}
+nav.tabs button:focus-visible {outline:3px solid #67c5f4;outline-offset:-2px}
+footer {padding-bottom:10px;overflow-wrap:anywhere;font-size:10px}
+/* Non-blocking feedback overlays and tap ripples */
+.toast {z-index:15}
+.tap-ripple {position:absolute;border-radius:50%;background:#79d3ff4d;pointer-events:none;transform:scale(0);animation:tapRipple .55s ease-out forwards;z-index:8}
+button {position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button:focus-visible {outline:3px solid #53bff0;outline-offset:2px}
+#tipButton {scroll-margin-top:90px}
+@keyframes ambientFloat {0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(35px,-45px,0)}}
+@keyframes logoFloat {0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes decorDrift {0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(-12px,8px,0)}}
+@keyframes statusBreathe {0%,100%{box-shadow:0 0 0 3px #33b8a62a}50%{box-shadow:0 0 0 7px #33b8a60a}}
+@keyframes riseIn {from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes panelEnter {from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes resultIn {from{opacity:0;transform:translateY(15px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes shieldFloat {0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes orbitBreathe {0%,100%{opacity:.65;scale:1}50%{opacity:1;scale:1.07}}
+@keyframes scanLine {0%,100%{transform:translateY(5px);opacity:.3}48%{transform:translateY(69px);opacity:1}60%{opacity:.7}}
+@keyframes sparkleTwinkle {0%,100%{opacity:.4;transform:scale(.85)}50%{opacity:1;transform:scale(1.18)}}
+@keyframes navPop {0%{transform:translateY(1px) scale(.84)}80%{transform:translateY(-3px) scale(1.08)}100%{transform:translateY(-2px) scale(1)}}
+@keyframes tapRipple {0%{opacity:.7;transform:scale(0)}100%{opacity:0;transform:scale(1)}}
+@media (max-width:360px) {
+  .hero .brand-image {width:64px;height:64px}
+  .hero-name {font-size:22px}.hero-title {font-size:11px}
+  main {padding-inline:15px}.langbar {padding-inline:15px}
+  .spotlight {padding:18px 16px}.spotlight-title {font-size:18px}
+  .shield-scanner {width:87px;flex-basis:87px}
+  .spotlight-copy {max-width:185px}.spotlight-desc {font-size:11px}
+  .ready-tag {font-size:8px}.eyebrow {font-size:9px}
+  .action-tile {padding:13px;min-height:149px}
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+</style>
+</head>
+<body>
+<div class="ambient-orb orb-1" aria-hidden="true"></div><div class="ambient-orb orb-2" aria-hidden="true"></div>
+<div class="phone">
+  <header class="hero" role="banner">
+    <div class="hero-inner">
+      <img class="brand-image" src="img/hirz_icon.jpg" alt="Hirz · حرز" />
+      <div class="hero-copy">
+        <div class="hero-name">Hirz <span lang="ar">حرز</span></div>
+        <div class="hero-title" data-t="hero.title"></div>
+        <div class="tag" data-t="tag"></div>
+      </div>
+    </div>
+    <div class="brand-status" aria-hidden="true"><span></span> HIRZ</div><div class="hero-decor" aria-hidden="true"></div>
+  </header>
+  <div class="flag"><i></i><i></i><i></i><i></i></div>
+
+  <div class="langbar" aria-label="Language options">
+    <button id="other" type="button" aria-label="Other languages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span data-t="other"></span></button>
+    <button id="lang" type="button"></button>
+  </div>
+  <div id="banner" class="banner" role="status"></div>
+
+  <main>
+    <!-- ============ HOME ============ -->
+    <section id="p-home" class="panel on" aria-labelledby="home-title">
+      <div class="welcome-row">
+        <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span><span data-t="home.eyebrow"></span></div>
+        <div class="ready-tag"><span class="ready-check" aria-hidden="true">✓</span><span data-t="home.ready"></span></div>
+      </div>
+      <h1 id="home-title" data-t="home.title"></h1>
+      <p class="lead home-lead" data-t="home.lead"></p>
+
+      <div class="spotlight" aria-label="Quick scan">
+        <div class="spotlight-glow" aria-hidden="true"></div>
+        <div class="spotlight-top">
+          <div class="spotlight-copy">
+            <span class="spotlight-eyebrow" data-t="home.spot.eyebrow"></span>
+            <h2 class="spotlight-title" data-t="home.spot.title"></h2>
+            <p class="spotlight-desc" data-t="home.spot.desc"></p>
+          </div>
+          <div class="shield-scanner" aria-hidden="true">
+            <div class="scan-orbit orbit-a"></div><div class="scan-orbit orbit-b"></div>
+            <div class="scan-sweep"></div>
+            <svg class="shield-art" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 7 87 21v27c0 28-15 43-37 55C28 91 13 76 13 48V21L50 7Z" fill="#E4F8FF" stroke="#1476B7" stroke-width="4"/><path d="m33 52 12 12 24-28" stroke="#0EA8AD" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="sparkle sp-one">✧</span><span class="sparkle sp-two">✦</span>
+          </div>
+        </div>
+        <button type="button" class="spotlight-cta" data-go="link"><span data-t="home.cta"></span><span class="cta-arrow" aria-hidden="true">→</span></button>
+      </div>
+
+      <div class="services-top"><h2 class="section-heading" data-t="home.services"></h2><span data-t="home.services.subtitle"></span></div>
+      <div class="action-grid">
+        <button type="button" class="action-tile" data-go="link">
+          <span class="tile-icon tile-link" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+          <strong data-t="home.link"></strong><small data-t="home.link.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
+        </button>
+        <button type="button" class="action-tile" data-go="number">
+          <span class="tile-icon tile-phone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
+          <strong data-t="home.number"></strong><small data-t="home.number.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
+        </button>
+        <button type="button" class="action-tile" data-go="listing">
+          <span class="tile-icon tile-listing" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+          <strong data-t="home.listing"></strong><small data-t="home.listing.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
+        </button>
+        <button type="button" class="action-tile action-help" id="tipButton">
+          <span class="tile-icon tile-tip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <strong data-t="home.tips"></strong><small data-t="home.tips.desc"></small><span class="tile-go" aria-hidden="true">↗</span>
+        </button>
+      </div>
+      <div class="how-it-works">
+        <div class="how-heading"><span class="mini-stars">✧</span><strong data-t="home.how.title"></strong></div>
+        <div class="steps-row">
+          <div class="step"><span class="step-number">1</span><span data-t="home.step1"></span></div>
+          <div class="step-line" aria-hidden="true"></div>
+          <div class="step"><span class="step-number">2</span><span data-t="home.step2"></span></div>
+          <div class="step-line" aria-hidden="true"></div>
+          <div class="step"><span class="step-number">3</span><span data-t="home.step3"></span></div>
+        </div>
+      </div>
+      <div class="tip-card" id="tipCard"><div class="tip-card-title"><span aria-hidden="true">✳</span><strong data-t="home.tip.title"></strong></div><p data-t="home.tip.text"></p></div>
+      <div class="trust-banner"><span class="trust-icon" aria-hidden="true">✓</span><div><strong data-t="home.trust.title"></strong><span data-t="home.trust.desc"></span></div></div>
+    </section>
+
+    <!-- ============ LINK ============ -->
+    <section id="p-link" class="panel">
+      <h1 data-t="link.h1"></h1>
+      <p class="lead" data-t="link.lead"></p>
+      <form id="f-link" autocomplete="off">
+        <input id="link" type="text" inputmode="url" dir="ltr" placeholder="https://example.com/login" data-t-aria="link.h1" required>
+        <button type="submit" data-t="link.btn"></button>
+      </form>
+      <div class="spinner"><i></i><span data-t="link.spin"></span></div>
+      <div class="error" role="alert"></div>
+      <div class="result" hidden>
+        <div class="verdict"><div class="word"></div><div class="sub"></div><div class="score"></div><div class="bar"><b></b></div></div>
+        <div class="body">
+          <div class="host"></div>
+          <h2 data-t="why"></h2>
+          <ul class="reasons"></ul>
+          <div class="actions">
+            <div id="evidence" class="evidence">
+              <button id="evBtn" type="button"></button>
+              <div id="evMsg" class="msg"></div>
+            </div>
+            <div id="proceed" class="proceed">
+              <button id="proceedBtn" type="button" class="ghost" data-t="proceed"></button>
+              <div id="warn" class="warn"><span data-t="warn"></span>
+                <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%" data-t="open"></button></div>
+              </div>
+            </div>
+          </div>
+          <div class="note" data-t="disclaimer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NUMBER ============ -->
+    <section id="p-number" class="panel">
+      <h1 data-t="num.h1"></h1>
+      <p class="lead" data-t="num.lead"></p>
+      <form id="f-number" autocomplete="off">
+        <label class="f" for="number" data-t="num.label"></label>
+        <input id="number" type="tel" inputmode="tel" dir="ltr" placeholder="050 123 4567 · 600 50 2030" required>
+        <label class="f" for="nbrand" data-t="num.brand"></label>
+        <select id="nbrand" class="brands"><option value="" data-t="num.none"></option></select>
+        <button type="submit" data-t="num.btn"></button>
+      </form>
+      <div class="spinner"><i></i><span data-t="num.spin"></span></div>
+      <div class="error" role="alert"></div>
+      <div class="result" hidden>
+        <div class="verdict"><div class="word"></div><div class="sub"></div><div class="score"></div><div class="bar"><b></b></div></div>
+        <div class="body">
+          <div class="host"></div>
+          <h2 data-t="why"></h2>
+          <ul class="reasons"></ul>
+          <div class="note" data-t="num.note"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LISTING ============ -->
+    <section id="p-listing" class="panel">
+      <h1 data-t="lst.h1"></h1>
+      <p class="lead" data-t="lst.lead"></p>
+      <div class="seg" role="tablist">
+        <button id="seg-form" class="on" type="button" role="tab" data-t="lst.one"></button>
+        <button id="seg-demo" type="button" role="tab" data-t="lst.demo"></button>
+      </div>
+
+      <div id="l-form">
+        <form id="f-listing" autocomplete="off">
+          <label class="f" for="lbrand" data-t="lst.brand"></label>
+          <select id="lbrand" class="brands" required><option value="" data-t="lst.choose"></option></select>
+          <label class="f" for="lname" data-t="lst.name"></label>
+          <input id="lname" type="text" data-t-ph="lst.name.ph">
+          <label class="f" for="lphone" data-t="lst.phone"></label>
+          <input id="lphone" type="tel" inputmode="tel" dir="ltr" placeholder="050 000 1234" required>
+          <label class="f" for="laddr" data-t="lst.addr"></label>
+          <input id="laddr" type="text" data-t-ph="lst.addr.ph">
+          <div class="row2">
+            <div><label class="f" for="lsite" data-t="lst.site"></label><input id="lsite" type="text" inputmode="url" dir="ltr" data-t-ph="optional"></div>
+            <div><label class="f" for="lrev" data-t="lst.rev"></label><input id="lrev" type="number" min="0" dir="ltr" data-t-ph="optional"></div>
+          </div>
+          <button type="submit" data-t="lst.btn"></button>
+        </form>
+        <div class="spinner"><i></i><span data-t="lst.spin"></span></div>
+        <div class="error" role="alert"></div>
+        <div class="result" hidden>
+          <div class="verdict"><div class="word"></div><div class="sub"></div></div>
+          <div class="body"><div class="signals"></div><h2 data-t="why"></h2><ul class="reasons"></ul>
+            <div class="note" data-t="disclaimer"></div></div>
+        </div>
+      </div>
+
+      <div id="l-demo" hidden>
+        <div class="spinner"><i></i><span data-t="lst.loading"></span></div>
+        <div class="error" role="alert"></div>
+        <div id="demo-list" class="list"></div>
+        <button id="rescan" type="button" class="ghost" style="width:100%;margin-top:12px" data-t="lst.rescan"></button>
+        <p class="note"><span data-t="lst.note1"></span> <span class="badge" style="margin:0" data-t="badge"></span>
+          <span data-t="lst.note2"></span></p>
+      </div>
+    </section>
+  </main>
+  <footer id="foot"></footer>
+</div>
+<div id="toast" class="toast" role="status"></div>
+
+<nav class="tabs" aria-label="Main navigation"><div class="inner">
+  <button id="t-home" class="on" type="button" aria-controls="p-home" aria-label="Home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span data-t="tab.home"></span></button>
+  <button id="t-link" type="button" aria-controls="p-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span data-t="tab.link"></span></button>
+  <button id="t-number" type="button" aria-controls="p-number">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span data-t="tab.number"></span></button>
+  <button id="t-listing" type="button" aria-controls="p-listing">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span data-t="tab.listing"></span></button>
+</div></nav>
+
+<script>
+
+// =====================================================================
+//  Strings. English and Arabic; add a language by adding a block here.
+// =====================================================================
+const STR = {
+  en: {
+    "hero.title": "Smart protection, made simple", "tab.home": "Home",
+    "home.eyebrow": "WELCOME TO HIRZ", "home.title": "How can we help you today?",
+    "home.lead": "A simple way to check suspicious links, calls and online listings.",
+    "home.trust.title": "Stay alert. Stay protected.",
+    "home.trust.desc": "Check before you click, call back or share information.",
+    "home.services": "What would you like to check?",
+    "home.link": "Check a link", "home.link.desc": "Is a website suspicious?",
+    "home.number": "Check a number", "home.number.desc": "Unknown caller or message?",
+    "home.listing": "Check a listing", "home.listing.desc": "Verify business contact details",
+    "home.tips": "Safety tips", "home.tips.desc": "Simple steps to avoid scams",
+    "home.tip.title": "A quick reminder",
+    "home.tip.text": "Never share one-time passwords, bank PINs or card details with someone who contacts you unexpectedly.",
+    "preview.offline": "Live checking is not connected. The server is needed to run this check.",
+    "tag": "Your safeguard against scams", "other": "Other languages", "lang": "العربية",
+    "other.toast": "More languages are coming soon.",
+    "tab.link": "Link", "tab.number": "Number", "tab.listing": "Listing",
+    "link.h1": "Check a link", "link.lead": "Paste a link from an SMS, email or chat.",
+    "link.btn": "Check link", "link.spin": "Checking the link — this can take a few seconds…",
+    "why": "Why", "disclaimer": "Risk assessments are advisory and are not proof of fraud.",
+    "realdomain": "Real domain: ", "fulladdr": " (full address: {h})", "score": "Risk score {s} / 100",
+    "noreasons": "No specific warning signs were reported.",
+    "ev.btn": "Download evidence report (PDF)", "ev.hint": "English and Arabic, ready to send to the police.",
+    "ev.building": "Building report…", "ev.collecting": "Collecting registration, certificate and hosting details — about 10–30 seconds.",
+    "ev.done": "Downloaded ✓  (download again)", "ev.saved": "Saved as {f}.", "ev.hash": " Integrity hash {h}…",
+    "proceed": "Proceed anyway", "open": "I understand — open the link",
+    "warn": "This link shows strong signs of a scam. Never enter a password, card number or OTP on it.",
+    "v.link.malicious": ["DANGER", "This link looks like a scam. Don't open it."],
+    "v.link.suspicious": ["CAREFUL", "Some warning signs. Check with the sender another way."],
+    "v.link.clean": ["NO WARNINGS", "No warning signs found. This does not guarantee safety."],
+    "v.link.unknown": ["UNKNOWN", "We couldn't assess this link."],
+    "num.h1": "Check a number", "num.lead": "Someone called or messaged claiming to be a bank, courier or government office?",
+    "num.label": "Phone number", "num.brand": "Who did they say they were?", "num.none": "Not sure / didn't say",
+    "num.btn": "Check number", "num.spin": "Checking…", "num.number": "Number: ",
+    "num.note": "If in doubt, hang up and call the number on the organisation's own website or card.",
+    "v.num.official": ["OFFICIAL NUMBER", "This matches a published customer service number."],
+    "v.num.malicious": ["DANGER", "Don't call back and never share codes or card details."],
+    "v.num.suspicious": ["CAREFUL", "Not a number this organisation publishes. Use the one on its own website."],
+    "v.num.clean": ["NO WARNINGS", "No warning signs found. This does not prove the caller is genuine."],
+    "v.num.unknown": ["UNKNOWN", "We couldn't assess this number."],
+    "lst.h1": "Check a listing", "lst.lead": "Found a \"customer service\" listing on Google Maps? Compare it with the brand's official information.",
+    "lst.one": "Check one", "lst.demo": "Demo listings", "lst.brand": "Brand", "lst.choose": "Choose…",
+    "lst.name": "Listing name", "lst.name.ph": "e.g. ADCB Customer Care Dubai", "lst.phone": "Phone on the listing",
+    "lst.addr": "Address on the listing", "lst.addr.ph": "e.g. Office 12, Al Qusais, Dubai",
+    "lst.site": "Website", "lst.rev": "Reviews", "optional": "optional", "lst.btn": "Check listing",
+    "lst.spin": "Cross-checking phone, address, map and website…", "lst.loading": "Loading listings…",
+    "lst.rescan": "Re-scan all listings", "badge": "sample fake",
+    "lst.note1": "Listings marked", "lst.note2": "are invented for the demo, using fictional +971 50 000 XXXX numbers. All others were collected from Google Maps.",
+    "lst.meta": "{p} · {n} disagree",
+    "v.lst.fabricated": ["FAKE LISTING", "Don't call this number."],
+    "v.lst.suspicious": ["CAREFUL", "Some details don't match the brand's official information."],
+    "v.lst.genuine": ["MATCHES OFFICIAL INFO", "Its details match the brand's own published information."],
+    "v.lst.unverified": ["NOT VERIFIED", "Nothing contradicts it, but too little could be checked."],
+    "sig.phone_in_official": "Phone is the brand's published number", "sig.address_in_branches": "Address is on the official branch list",
+    "sig.found_in_osm": "Mapped on OpenStreetMap at this address", "sig.web_mentions": "Name and phone appear elsewhere online",
+    "sig.website_official": "Website is the brand's official domain",
+    "sig.yes": "agrees", "sig.no": "disagrees", "sig.na": "not checked",
+    "err.server": "Couldn't reach the Hirz server. Start it with:", "err.api": "The checker API isn't running. Start it with:",
+    "err.http": "The server returned an error (HTTP {c}).", "foot": "Hirz · Your safeguard against scams",
+  },
+  ar: {
+    "hero.title": "حمايتك أسهل مع حرز", "tab.home": "الرئيسية",
+    "home.eyebrow": "أهلاً بك في حرز", "home.title": "كيف نقدر نساعدك اليوم؟",
+    "home.lead": "افحص الروابط والأرقام والإعلانات المشبوهة بسهولة ووضوح.",
+    "home.trust.title": "انتبه.. وخلّك بأمان",
+    "home.trust.desc": "تحقق قبل ما تضغط على رابط أو تعاود الاتصال أو تشارك بياناتك.",
+    "home.services": "شو حاب تفحص؟",
+    "home.link": "فحص رابط", "home.link.desc": "تأكد من الروابط المشبوهة",
+    "home.number": "فحص رقم", "home.number.desc": "رقم غريب اتصل أو راسلك؟",
+    "home.listing": "فحص إعلان", "home.listing.desc": "تحقق من بيانات النشاط التجاري",
+    "home.tips": "نصائح الأمان", "home.tips.desc": "خطوات بسيطة تحميك من الاحتيال",
+    "home.tip.title": "تذكير مهم",
+    "home.tip.text": "لا تشارك رمز التحقق أو الرقم السري أو بيانات بطاقتك مع أي شخص تواصل معك بشكل غير متوقع.",
+    "preview.offline": "خدمة الفحص المباشر غير متصلة حالياً، وتحتاج تشغيل الخادم لإتمام الفحص.",
+    "tag": "حمايتك من الاحتيال", "other": "لغات أخرى", "lang": "English",
+    "other.toast": "ستتوفر لغات أخرى قريبا.",
+    "tab.link": "رابط", "tab.number": "رقم", "tab.listing": "إعلان",
+    "link.h1": "تحقق من رابط", "link.lead": "الصق رابطا وصلك في رسالة نصية أو بريد إلكتروني أو محادثة.",
+    "link.btn": "افحص الرابط", "link.spin": "جار فحص الرابط، قد يستغرق ذلك بضع ثوان…",
+    "why": "الأسباب", "disclaimer": "تقييمات المخاطر استرشادية وليست دليلا على الاحتيال.",
+    "realdomain": "النطاق الحقيقي: ", "fulladdr": " (العنوان الكامل: {h})", "score": "درجة الخطورة {s} / 100",
+    "noreasons": "لم يتم الإبلاغ عن مؤشرات تحذيرية محددة.",
+    "ev.btn": "تنزيل تقرير الأدلة (PDF)", "ev.hint": "بالعربية والإنجليزية، جاهز للإرسال إلى الشرطة.",
+    "ev.building": "جار إعداد التقرير…", "ev.collecting": "جار جمع بيانات التسجيل والشهادة والاستضافة، نحو 10 إلى 30 ثانية.",
+    "ev.done": "تم التنزيل ✓ (تنزيل مرة أخرى)", "ev.saved": "حفظ باسم {f}.", "ev.hash": " بصمة السلامة {h}…",
+    "proceed": "المتابعة على أي حال", "open": "أفهم المخاطر، افتح الرابط",
+    "warn": "يظهر هذا الرابط مؤشرات قوية على الاحتيال. لا تدخل فيه أبدا كلمة مرور أو رقم بطاقة أو رمز تحقق.",
+    "v.link.malicious": ["خطر", "يبدو هذا الرابط احتياليا. لا تفتحه."],
+    "v.link.suspicious": ["احذر", "توجد بعض المؤشرات التحذيرية. تحقق من المرسل بطريقة أخرى."],
+    "v.link.clean": ["لا توجد تحذيرات", "لم يتم العثور على مؤشرات تحذيرية. هذا لا يضمن الأمان."],
+    "v.link.unknown": ["غير معروف", "تعذر تقييم هذا الرابط."],
+    "num.h1": "تحقق من رقم", "num.lead": "اتصل بك أو راسلك شخص يدعي أنه من بنك أو شركة شحن أو جهة حكومية؟",
+    "num.label": "رقم الهاتف", "num.brand": "بأي جهة عرف عن نفسه؟", "num.none": "غير متأكد / لم يذكر",
+    "num.btn": "افحص الرقم", "num.spin": "جار الفحص…", "num.number": "الرقم: ",
+    "num.note": "إذا ساورك الشك، أنه المكالمة واتصل بالرقم المنشور على موقع الجهة الرسمي أو على بطاقتك.",
+    "v.num.official": ["رقم رسمي", "هذا الرقم يطابق رقم خدمة عملاء منشورا رسميا."],
+    "v.num.malicious": ["خطر", "لا تعاود الاتصال ولا تشارك أي رموز أو بيانات بطاقة."],
+    "v.num.suspicious": ["احذر", "هذا ليس رقما تنشره هذه الجهة. استخدم الرقم المنشور على موقعها."],
+    "v.num.clean": ["لا توجد تحذيرات", "لم يتم العثور على مؤشرات تحذيرية. هذا لا يثبت أن المتصل حقيقي."],
+    "v.num.unknown": ["غير معروف", "تعذر تقييم هذا الرقم."],
+    "lst.h1": "تحقق من إعلان", "lst.lead": "وجدت إعلانا لخدمة العملاء على خرائط Google؟ قارنه بالمعلومات الرسمية للجهة.",
+    "lst.one": "فحص إعلان", "lst.demo": "إعلانات تجريبية", "lst.brand": "الجهة", "lst.choose": "اختر…",
+    "lst.name": "اسم الإعلان", "lst.name.ph": "مثال: ADCB Customer Care Dubai", "lst.phone": "الهاتف في الإعلان",
+    "lst.addr": "العنوان في الإعلان", "lst.addr.ph": "مثال: مكتب 12، القصيص، دبي",
+    "lst.site": "الموقع الإلكتروني", "lst.rev": "عدد التقييمات", "optional": "اختياري", "lst.btn": "افحص الإعلان",
+    "lst.spin": "جار مطابقة الهاتف والعنوان والخريطة والموقع…", "lst.loading": "جار تحميل الإعلانات…",
+    "lst.rescan": "إعادة فحص جميع الإعلانات", "badge": "نموذج مزيف",
+    "lst.note1": "الإعلانات المميزة بعلامة", "lst.note2": "مختلقة لأغراض العرض وتستخدم أرقاما وهمية بصيغة ⁦+971 50 000 XXXX⁩. أما البقية فجمعت من خرائط Google.",
+    "lst.meta": "{p} · فحوصات متعارضة: {n}",
+    "v.lst.fabricated": ["إعلان مزيف", "لا تتصل بهذا الرقم."],
+    "v.lst.suspicious": ["احذر", "بعض التفاصيل لا تطابق المعلومات الرسمية للجهة."],
+    "v.lst.genuine": ["يطابق المعلومات الرسمية", "تفاصيله تطابق المعلومات المنشورة من الجهة نفسها."],
+    "v.lst.unverified": ["غير مؤكد", "لا شيء يناقضه، لكن تعذر التحقق من معظم تفاصيله."],
+    "sig.phone_in_official": "رقم الهاتف هو الرقم المنشور للجهة", "sig.address_in_branches": "العنوان مدرج في قائمة الفروع الرسمية",
+    "sig.found_in_osm": "موجود على OpenStreetMap في هذا العنوان", "sig.web_mentions": "الاسم والرقم يظهران في مواقع أخرى",
+    "sig.website_official": "الموقع الإلكتروني هو النطاق الرسمي للجهة",
+    "sig.yes": "يتفق", "sig.no": "يتعارض", "sig.na": "لم يفحص",
+    "err.server": "تعذر الوصول إلى خادم حرز. شغله بالأمر:", "err.api": "واجهة الفحص لا تعمل. شغلها بالأمر:",
+    "err.http": "أعاد الخادم خطأ (HTTP {c}).", "foot": "حرز · حمايتك من الاحتيال",
+  },
+};
+
+
+// HIRZ Motion UI · translations for the new animated landing page.
+Object.assign(STR.en, {
+  "hero.title": "Your everyday digital safety companion",
+  "home.eyebrow": "YOUR SAFETY STARTS HERE",
+  "home.ready": "Ready when you are",
+  "home.title": "A little check. A lot more peace of mind.",
+  "home.lead": "Not sure about a link, number or listing? Take a moment to check before you trust.",
+  "home.spot.eyebrow": "START WITH ONE SMALL STEP",
+  "home.spot.title": "Spot the signs before you tap.",
+  "home.spot.desc": "Check suspicious links in seconds. Know the warning signs, not just a score.",
+  "home.cta": "Check a suspicious link",
+  "home.services": "What would you like to check?",
+  "home.services.subtitle": "Choose a tool below",
+  "home.how.title": "How Hirz helps",
+  "home.step1": "Enter details",
+  "home.step2": "We check",
+  "home.step3": "Get guidance",
+  "home.link": "Check a link", "home.link.desc": "Look into a suspicious URL",
+  "home.number": "Check a number", "home.number.desc": "Verify an unknown caller",
+  "home.listing": "Check a listing", "home.listing.desc": "Compare business details",
+  "home.tips": "Safety tips", "home.tips.desc": "Learn simple habits",
+});
+Object.assign(STR.ar, {
+  "hero.title": "رفيقك اليومي للأمان الرقمي",
+  "home.eyebrow": "أمانك يبدأ من هنا",
+  "home.ready": "جاهز لمساعدتك",
+  "home.title": "خطوة تحقق بسيطة، وراحة بال أكبر.",
+  "home.lead": "وصلك رابط أو رقم أو إعلان مشبوه؟ تحقق أولاً قبل أن تثق أو تشارك معلوماتك.",
+  "home.spot.eyebrow": "ابدأ بخطوة بسيطة",
+  "home.spot.title": "اكتشف علامات الاحتيال قبل الضغط.",
+  "home.spot.desc": "افحص الروابط المشبوهة وافهم أسباب التحذير بطريقة سهلة.",
+  "home.cta": "افحص رابطاً مشبوهاً",
+  "home.services": "شو تحب تفحص اليوم؟",
+  "home.services.subtitle": "اختر الخدمة المناسبة",
+  "home.how.title": "كيف يساعدك حرز؟",
+  "home.step1": "أدخل البيانات",
+  "home.step2": "نفحصها",
+  "home.step3": "نوضح النتيجة",
+  "home.link": "فحص رابط", "home.link.desc": "تحقق من رابط مشبوه",
+  "home.number": "فحص رقم", "home.number.desc": "راجع هوية المتصل",
+  "home.listing": "فحص إعلان", "home.listing.desc": "قارن بيانات الجهات",
+  "home.tips": "نصائح الأمان", "home.tips.desc": "خطوات سهلة للحماية",
+});
+
+// Arabic for the reason codes the API returns (English uses the API's own text).
+const REASON_AR = {
+  free_host: "مستضاف على منصة مجانية تصدر شهادات HTTPS فورية",
+  cheap_tld: "يستخدم امتداد نطاق رخيصا يشتريه المحتالون بكميات كبيرة",
+  n_hyphens: "اسم النطاق محشو بشرطات", dom_len: "اسم نطاق طويل بشكل غير معتاد",
+  entropy: "اسم النطاق يبدو مولدا عشوائيا", n_digits: "أرقام مضافة إلى اسم النطاق",
+  digit_ratio: "نسبة عالية من الأرقام في اسم النطاق", brand_in_dom: "يحتوي على اسم علامة تجارية محمية",
+  kw_in_dom: "كلمات أمنية في اسم النطاق", ct_free_ca: "الشهادة صادرة عن جهة مجانية",
+  ct_age_bucket: "صدرت شهادة النطاق حديثا جدا", ct_max_san: "الشهادة تغطي عددا كبيرا من النطاقات غير المرتبطة (إصدار بالجملة)",
+  ct_found: "لم يعثر على سجل للشهادات",
+  _rule_brand_misplaced: "اسم العلامة التجارية يظهر في النطاق الفرعي بينما النطاق الحقيقي مختلف",
+  _rule_kw_in_sub: "كلمات أمنية مستخدمة في النطاق الفرعي", _rule_deep_sub: "تداخل غير معتاد في النطاقات الفرعية",
+  official: "يطابق رقم خدمة العملاء المنشور للجهة",
+  mobile_prefix: "رقم هاتف متحرك شخصي، بينما تنشر البنوك وشركات الشحن والجهات الحكومية في الإمارات أرقاما مجانية أو أرضية",
+  line_type: "رقم مجاني أو أرضي، وهذا يتوافق مع أرقام خدمة العملاء الحقيقية",
+  not_in_official_set: "ليس من الأرقام المنشورة رسميا لـ{b}", unparseable: "ليس رقم هاتف صالحا",
+};
+
+// =====================================================================
+//  i18n plumbing
+// =====================================================================
+let LANG = "en";
+try { LANG = localStorage.getItem("hirz.lang") || (navigator.language || "").startsWith("ar") && "ar" || "en"; } catch (_) {}
+const t = (k, vars = {}) => {
+  let s = (STR[LANG] && STR[LANG][k]) ?? STR.en[k] ?? k;
+  if (typeof s === "string") for (const [a, b] of Object.entries(vars)) s = s.replaceAll("{" + a + "}", b);
+  return s;
+};
+const iso = (s) => "⁦" + s + "⁩";      // keep numbers, domains, commands left-to-right inside Arabic
+const BRANDS = {};                               // key -> {en, ar} display names
+const brandName = (k) => (BRANDS[k] && BRANDS[k].name) || k || "";
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  document.title = LANG === "ar" ? "حرز — حمايتك من الاحتيال" : "Hirz — your safeguard against scams";
+  document.querySelectorAll("[data-t]").forEach((el) => (el.textContent = t(el.dataset.t)));
+  document.querySelectorAll("[data-t-ph]").forEach((el) => (el.placeholder = t(el.dataset.tPh)));
+  document.querySelectorAll("[data-t-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.tAria)));
+  $("lang").textContent = t("lang");
+  $("lang").setAttribute("aria-label", LANG === "ar" ? "Switch to English" : "التبديل إلى العربية");
+  $("other").setAttribute("aria-label", t("other"));
+  $("foot").textContent = t("foot", { u: iso(BASE || location.origin) });
+  if (!evBusy) resetEvidence(false);
+  renderAll();
+  showBanner();
+}
+
+// =====================================================================
+//  App
+// =====================================================================
+const qs = new URLSearchParams(location.search);
+const BASE = (qs.get("server") || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8001")).replace(/\/$/, "");
+const $ = (id) => document.getElementById(id);
+const within = (el, sel) => el.querySelector(sel);
+const CMD_SERVER = "python -m uvicorn hirz_server:app --port 8001", CMD_API = "python -m uvicorn api:app --port 8000";
+
+async function post(path, body) {
+  const r = await fetch(BASE + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) {
+    let detail = ""; try { detail = (await r.json()).detail || ""; } catch (_) {}
+    const e = new Error(detail || t("err.http", { c: r.status })); e.http = true; throw e;
+  }
+  return r;
+}
+const errText = (err) => err instanceof TypeError ? t("err.server") + " " + iso(CMD_SERVER) : err.message;
+function busy(el, on) { within(el, ".spinner").classList.toggle("on", on); el.querySelectorAll("form button").forEach((b) => (b.disabled = on)); }
+function showError(el, msg) { const e = within(el, ".error"); e.textContent = msg; e.classList.add("on"); }
+function clearOut(el) { within(el, ".error").classList.remove("on"); within(el, ".result").hidden = true; }
+let toastTimer;
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("on"), 2600); }
+
+let health = null;
+function showBanner() {
+  const b = $("banner"); b.classList.remove("on");
+  if (health === "down" && !$("p-home").classList.contains("on")) { b.textContent = t("preview.offline"); b.classList.add("on"); }
+  else if (health === "noapi") { b.textContent = t("err.api") + " " + iso(CMD_API); b.classList.add("on"); }
+}
+
+function verdictBlock(card, tone, word, sub, score) {
+  const v = within(card, ".verdict"); v.className = "verdict v-" + tone;
+  within(v, ".word").textContent = word; within(v, ".sub").textContent = sub;
+  const sc = within(v, ".score"), bar = within(v, ".bar b");
+  if (sc) sc.textContent = Number.isFinite(score) ? t("score", { s: score }) : "";
+  if (bar) { bar.style.width = "0"; requestAnimationFrame(() => (bar.style.width = (Number.isFinite(score) ? score : 0) + "%")); }
+}
+function fillReasons(ul, items) {              // items: [{text, kind: "risk"|"safe"|"neutral"}]
+  ul.innerHTML = "";
+  if (!items.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("noreasons"); ul.append(li); return; }
+  for (const it of items) {
+    const li = document.createElement("li"); li.className = it.kind;
+    const d = document.createElement("span"); d.className = "dot"; d.textContent = it.kind === "safe" ? "✓" : it.kind === "neutral" ? "–" : "!";
+    const s = document.createElement("span"); s.textContent = it.text; li.append(d, s); ul.append(li);
+  }
+}
+const apiReasons = (reasons, brand) => (reasons || []).map((r) => ({
+  kind: r.direction === "safe" ? "safe" : "risk",
+  text: LANG === "ar" ? (REASON_AR[r.code] || r.text || r.code).replace("{b}", brand || "الجهة") : (r.text || r.code || ""),
+}));
+
+// ---------- tabs
+const TABS = ["home", "link", "number", "listing"];
+function showTab(name) {
+  TABS.forEach((x) => { $("t-" + x).classList.toggle("on", x === name); $("p-" + x).classList.toggle("on", x === name); });
+  window.scrollTo({ top: 0 });
+  showBanner();
+}
+TABS.forEach((x) => $("t-" + x).addEventListener("click", () => showTab(x)));
+document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.go)));
+$("tipButton").addEventListener("click", () => $("tipCard").scrollIntoView({ behavior: "smooth", block: "center" }));
+$("lang").addEventListener("click", () => { LANG = LANG === "ar" ? "en" : "ar"; try { localStorage.setItem("hirz.lang", LANG); } catch (_) {} applyLang(); });
+$("other").addEventListener("click", () => toast(t("other.toast")));   // placeholder: more languages not implemented yet
+
+// ---------- LINK
+const pLink = $("p-link");
+let lastUrl = "", linkData = null, evBusy = false;
+function resetEvidence(hide = true) {
+  if (hide) ["evidence", "proceed", "warn"].forEach((id) => $(id).classList.remove("on"));
+  $("evBtn").disabled = false; $("evBtn").textContent = t("ev.btn");
+  $("evMsg").className = "msg"; $("evMsg").textContent = t("ev.hint");
+}
+function renderLink(scroll) {
+  if (!linkData) return;
+  const d = linkData, key = ["malicious", "suspicious", "clean"].includes(d.verdict) ? d.verdict : "unknown";
+  const tone = { malicious: "red", suspicious: "amber", clean: "blue", unknown: "grey" }[key];
+  const [word, sub] = t("v.link." + key);
+  const card = within(pLink, ".result");
+  verdictBlock(card, tone, word, sub, d.score);
+  const host = within(card, ".host"); host.innerHTML = "";
+  if (d.host) {
+    const b = document.createElement("b"); b.textContent = iso(d.reg_domain || d.host);
+    host.append(t("realdomain"), b);
+    if (d.reg_domain && d.host !== d.reg_domain) host.append(t("fulladdr", { h: iso(d.host) }));
+  }
+  fillReasons(within(card, ".reasons"), apiReasons(d.reasons));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-link").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = $("link").value.trim(); if (!url) return;
+  lastUrl = url; linkData = null; clearOut(pLink); resetEvidence(); busy(pLink, true);
+  try {
+    linkData = await (await post("/api/check", { url })).json();
+    if (linkData.verdict === "malicious" || linkData.verdict === "suspicious") $("evidence").classList.add("on");
+    if (linkData.verdict === "malicious") $("proceed").classList.add("on");
+    renderLink(true);
+  } catch (err) { showError(pLink, errText(err)); }
+  finally { busy(pLink, false); }
+});
+$("evBtn").addEventListener("click", async () => {
+  const btn = $("evBtn"), msg = $("evMsg");
+  evBusy = true; btn.disabled = true; btn.textContent = t("ev.building"); msg.className = "msg"; msg.textContent = t("ev.collecting");
+  try {
+    const r = await post("/api/evidence", { url: lastUrl });
+    const blob = await r.blob(), id = r.headers.get("X-Evidence-Id") || "report";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "hirz-evidence-" + id + ".pdf";
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    btn.textContent = t("ev.done");
+    const h = r.headers.get("X-Bundle-SHA256") || "";
+    msg.textContent = t("ev.saved", { f: iso(a.download) }) + (h ? t("ev.hash", { h: iso(h.slice(0, 16)) }) : "");
+  } catch (err) { btn.textContent = t("ev.btn"); msg.className = "msg err"; msg.textContent = errText(err); }
+  finally { btn.disabled = false; evBusy = false; }
+});
+$("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
+$("openBtn").addEventListener("click", () => window.open(/^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl, "_blank", "noopener,noreferrer"));
+
+// ---------- NUMBER
+const pNum = $("p-number");
+let numData = null, numBrand = "";
+function renderNumber(scroll) {
+  if (!numData) return;
+  const d = numData, reasons = d.reasons || [];
+  const key = reasons.some((r) => r.code === "official") ? "official"
+    : ["malicious", "suspicious", "clean"].includes(d.verdict) ? d.verdict : "unknown";
+  const tone = { official: "green", malicious: "red", suspicious: "amber", clean: "blue", unknown: "grey" }[key];
+  const [word, sub] = t("v.num." + key);
+  const card = within(pNum, ".result");
+  verdictBlock(card, tone, word, sub, d.score);
+  const host = within(card, ".host"); host.innerHTML = "";
+  if (d.number) { const b = document.createElement("b"); b.textContent = iso(d.number); host.append(t("num.number"), b); }
+  fillReasons(within(card, ".reasons"), apiReasons(reasons, brandName(numBrand)));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-number").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const number = $("number").value.trim(); if (!number) return;
+  numBrand = $("nbrand").value;
+  const ctx = numBrand ? (BRANDS[numBrand] && BRANDS[numBrand].en) || numBrand : null;
+  numData = null; clearOut(pNum); busy(pNum, true);
+  try { numData = await (await post("/api/check-number", { number, brand_context: ctx })).json(); renderNumber(true); }
+  catch (err) { showError(pNum, errText(err)); }
+  finally { busy(pNum, false); }
+});
+
+// ---------- LISTING
+const LTONE = { fabricated: "red", suspicious: "amber", genuine: "green", unverified: "grey" };
+const SIGNALS = ["phone_in_official", "address_in_branches", "found_in_osm", "web_mentions", "website_official"];
+const sigVal = (row, k) => k === "web_mentions"
+  ? (row[k] === "" || row[k] == null ? "" : Number(row[k]) >= 2 ? "true" : "false") : String(row[k] ?? "");
+
+function signalsBox(row) {
+  const box = document.createElement("div"); box.className = "signals";
+  for (const k of SIGNALS) {
+    const v = sigVal(row, k), line = document.createElement("div"), d = document.createElement("span");
+    d.className = "dot " + (v === "true" ? "yes" : v === "false" ? "no" : "na");
+    d.textContent = v === "true" ? "✓" : v === "false" ? "✗" : "–";
+    const s = document.createElement("span"); s.textContent = t("sig." + k);
+    const sm = document.createElement("small"); sm.textContent = t(v === "true" ? "sig.yes" : v === "false" ? "sig.no" : "sig.na");
+    line.append(d, s, sm); box.append(line);
+  }
+  return box;
+}
+// English: the scanner's own sentences. Arabic: built from the same check results.
+function listingReasons(row) {
+  if (LANG !== "ar") {
+    const rs = Array.isArray(row.reasons) ? row.reasons : String(row.reasons || "").split(" | ").filter(Boolean);
+    return rs.map((text) => {
+      const neutral = /not checked|could not be checked|neither confirm|no official branch list|has no website/i.test(text);
+      const good = /published helpline|matches|is an official|shows a .* location|consistent with|appear on \d+ other/i.test(text);
+      return { text, kind: good ? "safe" : neutral ? "neutral" : "risk" };
+    });
+  }
+  const b = brandName(row.brand) || "الجهة", n = Number(row.disagreement_count || 0), out = [];
+  const v = (k) => sigVal(row, k), phone = iso(row.phone || "");
+  const kind = { fabricated: "risk", suspicious: "risk", genuine: "safe", unverified: "neutral" }[row.verdict] || "neutral";
+  if (row.verdict === "fabricated") out.push({ kind, text: row.phone_verdict === "malicious"
+      ? `مزيف بشكل قاطع: ${b} لا تنشر رقم هاتف متحرك شخصي كرقم لخدمة العملاء.`
+      : `مزيف بشكل قاطع: ${n} من الفحوصات المستقلة تتعارض مع المعلومات الرسمية لـ${b}.` });
+  else if (row.verdict === "genuine" && v("found_in_osm") === "false") out.push({ kind,
+      text: `رقم الهاتف هو الرقم المنشور لـ${b}. الإعلان غير موجود على OpenStreetMap، لكن تغطية الخرائط في الإمارات غير مكتملة، لذا لا يعد ذلك وحده مؤشرا تحذيريا.` });
+  else if (row.verdict === "genuine") out.push({ kind, text: `يتوافق مع المعلومات الرسمية لـ${b} في جميع الفحوصات التي أجريت.` });
+  else if (row.verdict === "suspicious") out.push({ kind, text: `${n} من الفحوصات تتعارض مع المعلومات الرسمية لـ${b}. اتصل بالرقم المنشور على موقع ${b} الرسمي بدلا من ذلك.` });
+  else out.push({ kind, text: "لا شيء يناقض هذا الإعلان، لكن لم يمكن التحقق من تفاصيل كافية لتأكيده." });
+
+  if (!row.phone) out.push({ kind: "neutral", text: "لا يظهر رقم هاتف في الإعلان." });
+  else if (v("phone_in_official") === "true") out.push({ kind: "safe", text: `رقم الهاتف ${phone} هو رقم خدمة العملاء المنشور لـ${b}.` });
+  else out.push({ kind: "risk", text: `رقم الهاتف ${phone} ليس من الأرقام المنشورة لـ${b}` + (row.phone_verdict === "malicious" ? " (رقم هاتف متحرك شخصي)." : ".") });
+
+  if (v("address_in_branches") === "true") out.push({ kind: "safe", text: `العنوان يطابق الفرع الرسمي «${row.matched_branch}» لـ${b}.` });
+  else if (v("address_in_branches") === "false") out.push({ kind: "risk", text: `العنوان لا يطابق أي فرع في قائمة الفروع الرسمية لـ${b}.` });
+  else out.push({ kind: "neutral", text: `لا توجد قائمة فروع رسمية لـ${b} حتى الآن، لذا لم يفحص العنوان.` });
+
+  if (v("found_in_osm") === "true") out.push({ kind: "safe", text: `يظهر على OpenStreetMap موقع لـ${b} في هذا العنوان.` });
+  else if (v("found_in_osm") === "false") out.push({ kind: "risk", text: `يعرض OpenStreetMap مواقع لـ${b}، لكن ليس في هذا العنوان.` });
+  else out.push({ kind: "neutral", text: "لا يمكن لـOpenStreetMap تأكيد هذا الإعلان أو نفيه." });
+
+  if (row.web_mentions === "" || row.web_mentions == null) out.push({ kind: "neutral", text: "لم يفحص الحضور على الإنترنت (لا يوجد مفتاح بحث)." });
+  else if (Number(row.web_mentions) >= 2) out.push({ kind: "safe", text: `الاسم والرقم يظهران في ${row.web_mentions} مواقع أخرى.` });
+  else out.push({ kind: "risk", text: `الاسم والرقم لا يكادان يظهران في أي موقع آخر (${row.web_mentions})، وهذا مؤشر على إعلان مختلق.` });
+
+  let site = row.website || ""; try { if (site) site = new URL(/^https?:/i.test(site) ? site : "https://" + site).hostname; } catch (_) {}
+  if (v("website_official") === "true") out.push({ kind: "safe", text: `الموقع ${iso(site || "")} نطاق رسمي لـ${b}.` });
+  else if (v("website_official") === "false") out.push({ kind: "risk", text: `الموقع ${iso(site || "")} ليس نطاقا رسميا لـ${b}.` });
+  else out.push({ kind: "neutral", text: "لا يحتوي الإعلان على موقع إلكتروني." });
+
+  if (row.review_count !== "" && row.review_count != null && Number(row.review_count) < 5) {
+    const rc = Number(row.review_count);
+    out.push({ kind: "risk", text: rc === 0 ? "لا توجد تقييمات على الإعلان." : `عدد التقييمات على الإعلان ${rc} فقط.` });
+  }
+  return out;
+}
+
+const lForm = $("l-form"), lDemo = $("l-demo");
+let listingRow = null, demoRows = null;
+function renderListing(scroll) {
+  if (!listingRow) return;
+  const card = within(lForm, ".result"), row = listingRow;
+  const [word, sub] = t("v.lst." + (LTONE[row.verdict] ? row.verdict : "unverified"));
+  verdictBlock(card, LTONE[row.verdict] || "grey", word, sub);
+  within(card, ".signals").replaceWith(signalsBox(row));
+  fillReasons(within(card, ".reasons"), listingReasons(row));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function renderDemo() {
+  if (!demoRows) return;
+  const list = $("demo-list"), open = new Set([...list.querySelectorAll(".item.open")].map((el) => el.dataset.i));
+  list.innerHTML = "";
+  demoRows.forEach((row, i) => {
+    const vk = LTONE[row.verdict] ? row.verdict : "unverified";
+    const item = document.createElement("div"); item.className = "item" + (open.has(String(i)) ? " open" : ""); item.dataset.i = i;
+    const head = document.createElement("button"); head.type = "button"; head.setAttribute("aria-expanded", open.has(String(i)));
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = row.name;
+    if (row.synthetic === "true") { const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = t("badge"); nm.append(bd); }
+    const chip = document.createElement("span"); chip.className = "chip " + LTONE[vk]; chip.textContent = t("v.lst." + vk)[0];
+    const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = t("lst.meta", { p: iso(row.phone), n: row.disagreement_count });
+    head.append(nm, chip, meta);
+    const det = document.createElement("div"); det.className = "detail";
+    const ul = document.createElement("ul"); ul.className = "reasons"; fillReasons(ul, listingReasons(row));
+    det.append(signalsBox(row), ul);
+    head.addEventListener("click", () => { item.classList.toggle("open"); head.setAttribute("aria-expanded", item.classList.contains("open")); });
+    item.append(head, det); list.append(item);
+  });
+}
+$("seg-form").addEventListener("click", () => { $("seg-form").classList.add("on"); $("seg-demo").classList.remove("on"); lForm.hidden = false; lDemo.hidden = true; });
+$("seg-demo").addEventListener("click", () => { $("seg-demo").classList.add("on"); $("seg-form").classList.remove("on"); lForm.hidden = true; lDemo.hidden = false; loadDemo(false); });
+$("f-listing").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  listingRow = null; clearOut(lForm); busy(lForm, true);
+  try {
+    const rev = $("lrev").value.trim();
+    listingRow = await (await post("/api/listing", { brand: $("lbrand").value, name: $("lname").value.trim(),
+      phone: $("lphone").value.trim(), address: $("laddr").value.trim(), website: $("lsite").value.trim(),
+      review_count: rev === "" ? null : Number(rev) })).json();
+    renderListing(true);
+  } catch (err) { showError(lForm, errText(err)); }
+  finally { busy(lForm, false); }
+});
+async function loadDemo(refresh) {
+  if (demoRows && !refresh) return;
+  within(lDemo, ".error").classList.remove("on"); within(lDemo, ".spinner").classList.add("on"); $("rescan").disabled = true;
+  try {
+    const r = await fetch(BASE + "/api/listings" + (refresh ? "?refresh=1" : ""));
+    if (!r.ok) { let d = ""; try { d = (await r.json()).detail || ""; } catch (_) {} throw new Error(d || t("err.http", { c: r.status })); }
+    demoRows = await r.json(); renderDemo();
+  } catch (err) { showError(lDemo, errText(err)); }
+  finally { within(lDemo, ".spinner").classList.remove("on"); $("rescan").disabled = false; }
+}
+$("rescan").addEventListener("click", () => loadDemo(true));
+
+function renderAll() { renderLink(false); renderNumber(false); renderListing(false); renderDemo(); }
+
+// ---------- start
+(async () => {
+  try { const h = await (await fetch(BASE + "/api/health")).json(); health = h.checker_api ? "ok" : "noapi"; }
+  catch (_) { health = "down"; }
+  showBanner();
+  try {
+    const brands = await (await fetch(BASE + "/api/brands")).json();
+    for (const b of brands) BRANDS[b.brand] = { en: b.display_name, name: b.display_name };
+    document.querySelectorAll("select.brands").forEach((sel) => {
+      for (const b of brands) { const o = document.createElement("option"); o.value = b.brand; o.textContent = b.display_name; sel.append(o); }
+    });
+  } catch (_) {}
+})();
+applyLang();
+if (location.hash === "#number") showTab("number");
+if (location.hash === "#listing") showTab("listing");
+
+
+// Progressive micro-interactions: real buttons retain original actions.
+(function enableMicroInteractions() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  document.addEventListener('pointerdown', (event) => {
+    if (reduceMotion.matches) return;
+    const button = event.target.closest('button');
+    if (!button || button.disabled) return;
+    const rect = button.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'tap-ripple';
+    const size = Math.max(rect.width, rect.height) * 1.6;
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+    button.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+  });
+  // Periodic status updates are visual only; never imply an actual backend check.
+  document.querySelectorAll('.action-tile').forEach((tile, index) => {
+    tile.style.setProperty('--tile-delay', `${0.10 + index * 0.07}s`);
+  });
+})();
+
+</script>
+</body>
+</html>
