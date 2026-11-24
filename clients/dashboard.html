@@ -138,12 +138,15 @@
 
 <script>
 // same-origin when served from the API, falls back for file:// use
-// The console talks to api.py directly. hirz_server.py (port 8001) also serves this
-// file as a static asset, so if we are opened from there, reach back to port 8000.
-const API = !location.protocol.startsWith("http") ? "http://127.0.0.1:8000"
-  : location.port && location.port !== "8000"
-    ? location.protocol + "//" + location.hostname + ":8000"
-    : location.origin;
+// The console talks to api.py directly, and api.py is what serves this file, so
+// same origin is right whatever port it was started on. The exception is port
+// 8001: that is hirz_server.py serving this file as a static asset, and it only
+// answers under /api, so reach back to api.py on its own port. ?api=<url>
+// overrides everything, for a tunnel or a host that moves the ports around.
+const API = (new URLSearchParams(location.search).get("api") || (
+  !location.protocol.startsWith("http") ? "http://127.0.0.1:8000"
+  : location.port === "8001" ? location.protocol + "//" + location.hostname + ":8000"
+  : location.origin)).replace(/\/$/, "");
 const D = { en: {
  "rep.t.website": "Fake website or link",
  "rep.t.phone": "Phone call or SMS",
