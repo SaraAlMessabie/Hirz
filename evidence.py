@@ -15,7 +15,7 @@ The page is fetched once with a plain HTTP GET (no JavaScript is run).
 If something can't be collected, the field says so — nothing is invented.
 """
 import argparse, hashlib, json, os, pathlib, socket, ssl, sys, time, uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlparse
 
 import httpx
@@ -381,6 +381,23 @@ CYAN = (8, 145, 178)                     # print-safe version of the slide's glo
 UAE = [(0, 115, 47), (255, 255, 255), (0, 0, 0), (206, 17, 38)]
 
 
+UAE_TZ = timezone(timedelta(hours=4), "GST")      # UAE has no daylight saving
+
+
+def uae_time(iso, lang="en"):
+    """'2026-11-24T15:20:32+00:00' -> '24 Nov 2026, 19:20:32 UAE time' (bundle stays in UTC)."""
+    try:
+        t = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=timezone.utc)
+        t = t.astimezone(UAE_TZ)
+    except Exception:
+        return str(iso or "-")
+    if lang == "ar":
+        return t.strftime("%Y-%m-%d %H:%M:%S") + " بتوقيت الإمارات"
+    return t.strftime("%d %b %Y, %H:%M:%S") + " UAE time"
+
+
 def render_pdf(b: dict, path):
     """One PDF: page 1 English, page 2 Arabic (right-to-left)."""
     from fpdf import FPDF
@@ -480,7 +497,7 @@ def _render_page(pdf, b, lang, page_no, pages=2):
         fill = mw * max(0, min(100, score)) / 100
         pdf.set_fill_color(*vcol); pdf.rect(mx + mw - fill if rtl else mx, 26.3, fill, 1.8, "F")
     font(7.5); pdf.set_text_color(190, 205, 222); pdf.set_xy(tx, 30.5)
-    pdf.cell(tw, 4.5, show(f"{L10N['title']}  {b['evidence_id']}  ·  {L10N['captured']} {b['captured_at']} UTC"),
+    pdf.cell(tw, 4.5, show(f"{L10N['title']}  {b['evidence_id']}  ·  {L10N['captured']} {uae_time(b['captured_at'], lang)}"),
              align=align)
     seg = pdf.w / 4                                                  # UAE-flag stripe, as on the logo
     for i, col in enumerate(reversed(UAE) if rtl else UAE):
@@ -560,7 +577,8 @@ def _render_page(pdf, b, lang, page_no, pages=2):
     lines.append(f"Page HTML SHA-256: {b.get('html_sha256') or 'not captured'}")
     if b.get("screenshot_sha256"):
         lines.append(f"Screenshot SHA-256: {b['screenshot_sha256']}")
-    lines.append(f"Checked {b.get('checked_at')}; evidence captured {b.get('captured_at')} (UTC)")
+    lines.append(f"Checked {uae_time(b.get('checked_at'))}; evidence captured {uae_time(b.get('captured_at'))} "
+                 "(UTC+4; the JSON bundle stores UTC)")
     lines.append(f"Bundle SHA-256 (chain of custody, over the canonical JSON of all other fields): {b['bundle_sha256']}")
     for line in lines:
         para(line, 7.5, "", 3.8, (71, 85, 105), ltr=True)
