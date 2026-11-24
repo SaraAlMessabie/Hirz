@@ -1,0 +1,6 @@
+domain,source,score,first_seen,confirmed_by,confirmed_at
+paypal-com-aspi-dll.us,phishing_feed,97,2026-11-22T09:00:00Z,investigator,2026-11-24T18:00:00Z
+barclaysiportalfraudcentre.com,phishing_feed,96,2026-11-22T09:00:00Z,investigator,2026-11-24T18:00:00Z
+ingdirect-portal-ingreso.com,phishing_feed,94,2026-11-22T09:00:00Z,investigator,2026-11-24T18:00:00Z
+amazon-europe.club,phishing_feed,92,2026-11-22T09:00:00Z,investigator,2026-11-24T18:00:00Z
+porrtal-stpmex.com,phishing_feed,91,2026-11-22T09:00:00Z,investigator,2026-11-24T18:00:00Z
