@@ -1,0 +1,7 @@
+# Training and the research scripts. Not needed to run the servers.
+-r requirements.txt
+
+scikit-learn>=1.4
+shap>=0.45
+dnstwist>=20240116
+mmh3>=4.1
