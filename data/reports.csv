@@ -1,0 +1,4 @@
+report_id,type,description,url,phone,email,reporter,status,created_at,auto_verdict,auto_score
+R-SEED0001,website,SMS said my account was locked and I had 24 hours to verify.,paypal-com-aspi-dll.us,,,anonymous,confirmed,2026-11-24T17:10:00Z,CONFIRMED,97
+R-SEED0002,phone,Caller claimed to be from the bank and asked for the OTP.,,+971551234567,,anonymous,pending,2026-11-24T17:40:00Z,suspicious,60
+R-SEED0003,website,Link arrived on WhatsApp about a parcel customs fee.,dhl--usa.com.ph,,,anonymous,pending,2026-11-24T17:55:00Z,REPORTED,76

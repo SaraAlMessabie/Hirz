@@ -1,0 +1,35 @@
+# Two free services. A free instance that is spun down consumes no instance
+# hours, so two of them sit inside the 750/month allowance for a demo.
+#
+# After the first deploy, set HIRZ_API on hirz-app to the full URL of hirz-api,
+# e.g. https://hirz-api.onrender.com  (Render asks for it: sync is false).
+#
+# Open hirz-app  for the citizen app.
+# Open hirz-api  for the investigator console -- api.py serves it at /, so the
+# console talks to its own origin and every endpoint is where it expects.
+services:
+  - type: web
+    name: hirz-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+  - type: web
+    name: hirz-app
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn hirz_server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: HIRZ_API
+        sync: false
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: NOMINATIM_EMAIL
+        sync: false
