@@ -85,5 +85,5 @@ if __name__ == "__main__":
                 print(f"{brand:14} FAILED {e.__class__.__name__}")
 
     pathlib.Path("data").mkdir(exist_ok=True)
-    pathlib.Path("data/references.json").write_text(json.dumps(out), "utf-8")
+    (pathlib.Path(__file__).resolve().parent / "data" / "references.json").write_text(json.dumps(out), "utf-8")
     print(f"\nwrote data/references.json  ({sum(len(v) for v in out.values())} pages)")
