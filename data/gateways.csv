@@ -1,0 +1,7 @@
+domain,provider,source_url
+checkout.payfort.com,Amazon Payment Services,https://paymentservices.amazon.com/docs/payment-methods/local-payment-methods/naps
+secure.paytabs.com,PayTabs,https://docs.paytabs.com/manuals/PT-API-Endpoints/Integration-Types-Manuals/Hosted-Payment-Page/HPP-Step-2-Configure-Integration-Method/HPP-Step-2-Landing
+pay.checkout.com,Checkout.com,https://www.checkout.com/docs/payments/accept-payments/accept-a-payment-on-a-hosted-page/manage-your-hosted-payments-page
+checkout.stripe.com,Stripe,https://docs.stripe.com/api/checkout/sessions?lang=java
+secure.telr.com,Telr,https://apis.io/apis/telr/telr-remote-api/
+adyen.link,Adyen (regional subdomains e.g. eu.adyen.link),https://docs.adyen.com/standard/integration/hosted-checkout
