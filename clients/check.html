@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hirz — Check a link</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --card: #131c2e;
+    --line: #22304a;
+    --text: #e8eef9;
+    --muted: #93a3bd;
+    --accent: #3b82f6;
+    --red: #ef4444;   --red-bg: #2a1215;
+    --amber: #f59e0b; --amber-bg: #2a2010;
+    --green: #22c55e; --green-bg: #0f2418;
+    --grey: #94a3b8;  --grey-bg: #1a2233;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .phone { max-width: 390px; margin: 0 auto; min-height: 100vh; padding: 20px 18px 40px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  header svg { flex: none; }
+  header h1 { font-size: 20px; margin: 0; letter-spacing: .2px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  form { display: flex; flex-direction: column; gap: 10px; }
+  label { font-size: 14px; color: var(--muted); }
+  input[type=text] {
+    width: 100%; padding: 14px; font-size: 16px; color: var(--text);
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 14px;
+    cursor: pointer; color: #fff; background: var(--accent);
+  }
+  button:disabled { opacity: .6; cursor: wait; }
+  .ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+
+  .spinner { display: none; align-items: center; gap: 10px; color: var(--muted); margin-top: 18px; }
+  .spinner.on { display: flex; }
+  .spinner i { width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result { display: none; margin-top: 20px; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--line); background: var(--card); }
+  .result.on { display: block; }
+  .verdict { padding: 22px 18px 18px; text-align: center; }
+  .verdict .word { font-size: 40px; font-weight: 800; letter-spacing: 1px; line-height: 1.1; }
+  .verdict .sub { margin-top: 6px; font-size: 15px; }
+  .verdict .score { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); margin: 8px auto 0; max-width: 240px; overflow: hidden; }
+  .bar b { display: block; height: 100%; width: 0; transition: width .6s ease; }
+
+  .v-malicious  { background: var(--red-bg); }   .v-malicious  .word, .v-malicious  .sub { color: var(--red); }   .v-malicious  .bar b { background: var(--red); }
+  .v-suspicious { background: var(--amber-bg); } .v-suspicious .word, .v-suspicious .sub { color: var(--amber); } .v-suspicious .bar b { background: var(--amber); }
+  .v-clean      { background: var(--green-bg); } .v-clean      .word, .v-clean      .sub { color: var(--green); } .v-clean      .bar b { background: var(--green); }
+  .v-unknown    { background: var(--grey-bg); }  .v-unknown    .word, .v-unknown    .sub { color: var(--grey); }  .v-unknown    .bar b { background: var(--grey); }
+
+  .body { padding: 16px 18px 18px; }
+  .host { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; margin-bottom: 12px; }
+  .host b { color: var(--text); font-weight: 600; }
+  h2 { font-size: 15px; margin: 0 0 8px; }
+  ul.reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.reasons li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;
+    background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; font-size: 15px; }
+  ul.reasons li .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .risk .dot { background: var(--red-bg); color: var(--red); }
+  .safe .dot { background: var(--green-bg); color: var(--green); }
+  .empty { color: var(--muted); font-size: 14px; }
+  .note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+
+  .proceed { margin-top: 16px; display: none; flex-direction: column; gap: 8px; }
+  .proceed.on { display: flex; }
+  .proceed .warn { display: none; font-size: 14px; color: var(--red); background: var(--red-bg);
+    border: 1px solid #5b1d22; border-radius: 10px; padding: 10px 12px; }
+  .proceed .warn.on { display: block; }
+  .danger { background: var(--red); }
+
+  .error { display: none; margin-top: 18px; padding: 12px 14px; border-radius: 12px;
+    background: var(--grey-bg); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
+  .error.on { display: block; }
+  footer { margin-top: 24px; font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<main class="phone">
+  <header>
+    <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 2 4 7v8c0 7.3 5.1 13.4 12 15 6.9-1.6 12-7.7 12-15V7L16 2z" fill="#3b82f6"/>
+      <path d="m11 16 3.5 3.5L21.5 12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <h1>Hirz — Check a link</h1>
+      <p>Paste a link from an SMS, email or chat</p>
+    </div>
+  </header>
+
+  <form id="f" autocomplete="off">
+    <label for="url">Link to check</label>
+    <input id="url" type="text" inputmode="url" placeholder="https://example.com/login" required>
+    <button id="go" type="submit">Check link</button>
+  </form>
+
+  <div id="spin" class="spinner" role="status" aria-live="polite"><i></i><span>Checking the link — this can take a few seconds…</span></div>
+  <div id="err" class="error" role="alert"></div>
+
+  <section id="res" class="result" aria-live="polite">
+    <div id="verdict" class="verdict">
+      <div id="word" class="word"></div>
+      <div id="sub" class="sub"></div>
+      <div id="score" class="score"></div>
+      <div class="bar"><b id="bar"></b></div>
+    </div>
+    <div class="body">
+      <div id="host" class="host"></div>
+      <h2>Why</h2>
+      <ul id="reasons" class="reasons"></ul>
+
+      <div id="proceed" class="proceed">
+        <button id="proceedBtn" type="button" class="ghost">Proceed anyway</button>
+        <div id="warn" class="warn">
+          This link shows strong signs of a scam. Never enter a password, card number or OTP on it.
+          <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%">I understand — open the link</button></div>
+        </div>
+      </div>
+
+      <div class="note">Risk assessments are advisory and are not proof of fraud.</div>
+      <button id="again" type="button" class="ghost" style="width:100%;margin-top:14px">Check another link</button>
+    </div>
+  </section>
+
+  <footer id="api"></footer>
+</main>
+
+<script>
+  // API address: defaults to the laptop running uvicorn. For a phone on the same
+  // Wi-Fi, open this page with ?api=http://<laptop-ip>:8000
+  const API = (new URLSearchParams(location.search).get("api") || "http://127.0.0.1:8000").replace(/\/$/, "");
+  document.getElementById("api").textContent = "Talking to " + API;
+
+  const LABEL = {
+    malicious:  { word: "DANGER",     sub: "This link looks like a scam. Don't open it." },
+    suspicious: { word: "CAREFUL",    sub: "Some warning signs. Check with the sender another way." },
+    clean:      { word: "NO WARNINGS", sub: "No warning signs found. This does not guarantee safety." },
+    unknown:    { word: "UNKNOWN",    sub: "We couldn't assess this link." },
+  };
+
+  const $ = (id) => document.getElementById(id);
+  let lastUrl = "";
+
+  function reset() {
+    $("res").classList.remove("on");
+    $("err").classList.remove("on");
+    $("proceed").classList.remove("on");
+    $("warn").classList.remove("on");
+    $("bar").style.width = "0";
+  }
+
+  function render(data) {
+    const v = LABEL[data.verdict] ? data.verdict : "unknown";
+    $("verdict").className = "verdict v-" + v;
+    $("word").textContent = LABEL[v].word;
+    $("sub").textContent = LABEL[v].sub;
+    const score = Number.isFinite(data.score) ? data.score : null;
+    $("score").textContent = score === null ? "" : "Risk score " + score + " / 100";
+    requestAnimationFrame(() => { $("bar").style.width = (score || 0) + "%"; });
+
+    const host = data.host || "";
+    const reg = data.reg_domain || "";
+    $("host").innerHTML = "";
+    if (host) {
+      const b = document.createElement("b"); b.textContent = reg || host;
+      $("host").append("Real domain: ", b);
+      if (reg && host !== reg) $("host").append(" (full address: " + host + ")");
+    }
+
+    const ul = $("reasons"); ul.innerHTML = "";
+    const reasons = Array.isArray(data.reasons) ? data.reasons : [];
+    if (!reasons.length) {
+      const li = document.createElement("li"); li.className = "empty";
+      li.textContent = "No specific warning signs were reported.";
+      ul.append(li);
+    }
+    for (const r of reasons) {
+      const li = document.createElement("li");
+      const safe = r.direction === "safe";
+      li.className = safe ? "safe" : "risk";
+      const dot = document.createElement("span"); dot.className = "dot"; dot.textContent = safe ? "✓" : "!";
+      const txt = document.createElement("span"); txt.textContent = r.text || r.code || "";
+      li.append(dot, txt); ul.append(li);
+    }
+
+    if (v === "malicious") $("proceed").classList.add("on");
+    $("res").classList.add("on");
+    $("res").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  $("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = $("url").value.trim();
+    if (!url) return;
+    lastUrl = url;
+    reset();
+    $("go").disabled = true;
+    $("spin").classList.add("on");
+    try {
+      const r = await fetch(API + "/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, deep: true }),
+      });
+      if (!r.ok) throw new Error("The checker returned an error (HTTP " + r.status + ").");
+      render(await r.json());
+    } catch (err) {
+      $("err").textContent = (err instanceof TypeError)
+        ? "Couldn't reach the checker at " + API + ". Is the API running? (If it is, the browser may be blocking it — CORS.)"
+        : err.message;
+      $("err").classList.add("on");
+    } finally {
+      $("go").disabled = false;
+      $("spin").classList.remove("on");
+    }
+  });
+
+  $("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
+  $("openBtn").addEventListener("click", () => {
+    const target = /^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl;
+    window.open(target, "_blank", "noopener,noreferrer");
+  });
+  $("again").addEventListener("click", () => { reset(); $("url").value = ""; $("url").focus(); });
+</script>
+</body>
+</html>

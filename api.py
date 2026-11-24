@@ -39,6 +39,9 @@ RULE_TEXT = {
 
 app = FastAPI(title="scam-detect")
 
+from fastapi.middleware.cors import CORSMiddleware   # Task 5: lets clients/check.html (file://) call the API
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
 class UrlIn(BaseModel):
     url: str
 
