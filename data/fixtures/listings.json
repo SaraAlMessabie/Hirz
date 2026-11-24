@@ -1,0 +1,179 @@
+[
+ {
+  "brand": "adcb",
+  "name": "ADCB uBank - Digital Banking Center - Galleria Mall",
+  "address": "East Entrance - Galleria Mall - Ground floor - Maryah Island - Abu Dhabi",
+  "phone": "+971600502030",
+  "website": "adcb.com",
+  "review_count": 413,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "adcb",
+  "name": "ADCB - Abu Dhabi Main Branch",
+  "address": "Zayed The First St - near ADNOC Distribution - Al Danah - Zone 1 - Abu Dhabi",
+  "phone": "+971600502030",
+  "website": "adcb.com",
+  "review_count": 4417,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "adcb",
+  "name": "ADCB uBank - Digital Banking Center - Abu Dhabi Mall",
+  "address": "Al Zahiyah, Al Miyani Street, Tourist Club area, Abu Dhabi Mall Ground level next to main entrance - Abu Dhabi",
+  "phone": "+971600502030",
+  "website": "adcb.com",
+  "review_count": 2300,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "review_count_note": "shown truncated as '2,3...'; lower bound"
+ },
+ {
+  "brand": "emiratesnbd",
+  "name": "Emirates NBD - Electra Street Branch",
+  "address": "Electra Street Branch, Al Owais Building - Shaikh Zayed Second Street - near LLH Hospital - Al Danah - Zone 1 - Abu Dhabi",
+  "phone": "+971600540000",
+  "website": "emiratesnbd.com",
+  "review_count": 3550,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "review_count_note": "shown truncated as '3,55...'; lower bound"
+ },
+ {
+  "brand": "emiratesnbd",
+  "name": "Emirates NBD - Khalidiya Branch",
+  "address": "Al orjowan Tower - Ground floor - Zayed The First St - Al Hisn - W6 - Abu Dhabi",
+  "phone": "+971600540000",
+  "website": "emiratesnbd.com",
+  "review_count": 3570,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "review_count_note": "shown truncated as '3,57...'; lower bound"
+ },
+ {
+  "brand": "emiratesnbd",
+  "name": "Emirates NBD - Khalifa Branch",
+  "address": "Ground, Al Neem Tower - Building Shaikh Khalifa Street - Al Danah - Zone 1 - Abu Dhabi",
+  "phone": "+971600540000",
+  "website": "emiratesnbd.com",
+  "review_count": 1300,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "review_count_note": "shown truncated as '1,30...'; lower bound"
+ },
+ {
+  "brand": "aramex",
+  "name": "Aramex Al Zahiyah",
+  "address": "Omar Tower - Ground floor - As Sindan St - near Future Pharmacy - Al Zahiyah - E14 - Abu Dhabi",
+  "phone": "+971600544000",
+  "website": "aramex.com",
+  "review_count": 33,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "aramex",
+  "name": "Aramex Khalidiya Outlet",
+  "address": "Khalidiya Mall - Ground Floor - Mubarak Bin Mohammed St - in front of LULU Hypermarket - Al Khalidiyah - W9 - Abu Dhabi",
+  "phone": "+971600544000",
+  "website": "aramex.com",
+  "review_count": 114,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "aramex",
+  "name": "Aramex AUH Airport Outlet",
+  "address": "Building # 855 Airport Road - behind Al Jazeera Sports Club - Al Nahyan - Zone 1 - Abu Dhabi",
+  "phone": "+971600544000",
+  "website": "aramex.com",
+  "review_count": 2794,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false
+ },
+ {
+  "brand": "emiratespost",
+  "name": "Emirates Post - Al Zahiyah Post Office",
+  "address": "Al Zahiyah - E14 - شارع ١٠ - Abu Dhabi",
+  "phone": "+971600599999",
+  "website": "emiratespost.ae",
+  "review_count": 167,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "note": "listing subtitle: NXN - Al Zahiyah Post Office (formerly Emirates Post)"
+ },
+ {
+  "brand": "emiratespost",
+  "name": "Emirates Post - Hamdan Post Office",
+  "address": "Beside Le Royal Meridien, Zadco Tower - Khalifa Bin Zayed The First St - Al Danah - Zone 1 - Abu Dhabi",
+  "phone": "+971600599999",
+  "website": "emiratespost.ae",
+  "review_count": 167,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "note": "marked Temporarily closed on Google Maps"
+ },
+ {
+  "brand": "emiratespost",
+  "name": "NXN - Abu Dhabi Central",
+  "address": "Murour Rd, Zayed City Beside Gold Souq - Abu Dhabi",
+  "phone": "+971600569696",
+  "website": "",
+  "review_count": 821,
+  "source": "google_maps_manual (teammate screenshot, 2026-11-24)",
+  "synthetic": false,
+  "note": "NXN runs Emirates Post's branch network; no website shown on the listing"
+ },
+ {
+  "brand": "adcb",
+  "name": "ADCB Customer Care Dubai",
+  "address": "Office 1204, Al Moosa Tower 2, Sheikh Zayed Road, Dubai",
+  "phone": "+971500001234",
+  "website": "",
+  "review_count": 3,
+  "source": "synthetic",
+  "synthetic": true
+ },
+ {
+  "brand": "emiratesnbd",
+  "name": "Emirates NBD Card Services Helpdesk",
+  "address": "Shop 7, Al Nahda 2, Dubai",
+  "phone": "+971500005678",
+  "website": "https://enbd-card-help.example",
+  "review_count": 1,
+  "source": "synthetic",
+  "synthetic": true
+ },
+ {
+  "brand": "aramex",
+  "name": "Aramex Customer Service 24/7",
+  "address": "Building 12, Al Qusais Industrial Area 4, Dubai",
+  "phone": "+971500002468",
+  "website": "",
+  "review_count": 0,
+  "source": "synthetic",
+  "synthetic": true
+ },
+ {
+  "brand": "emiratespost",
+  "name": "Emirates Post Parcel Release Office",
+  "address": "Warehouse 3, Ras Al Khor Industrial Area 2, Dubai",
+  "phone": "+971500001357",
+  "website": "https://emiratespost-release.example",
+  "review_count": 2,
+  "source": "synthetic",
+  "synthetic": true
+ },
+ {
+  "brand": "tamm",
+  "name": "TAMM Fines Payment Centre",
+  "address": "Office 5, Hamdan Street, Abu Dhabi",
+  "phone": "+971500009876",
+  "website": "",
+  "review_count": 4,
+  "source": "synthetic",
+  "synthetic": true
+ }
+]

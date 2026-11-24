@@ -39,6 +39,9 @@ RULE_TEXT = {
 
 app = FastAPI(title="scam-detect")
 
+from fastapi.middleware.cors import CORSMiddleware   # Task 5: lets clients/check.html (file://) call the API
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
 class UrlIn(BaseModel):
     url: str
 
@@ -87,7 +90,17 @@ def check(body: UrlIn):
             "needs_tier2": ESCALATE <= score < BLOCK,
             "checked_at": now()}
 
-OFFICIAL = set()        # load from data/helplines.csv when Track D delivers
+import csv, pathlib
+
+OFFICIAL, BRAND_NUMBERS = set(), {}
+_hl = pathlib.Path("data/helplines.csv")
+if _hl.exists():
+    for row in csv.DictReader(_hl.read_text("utf-8").splitlines()):
+        num = (row.get("number") or "").strip()
+        if num:
+            OFFICIAL.add(num)
+            BRAND_NUMBERS.setdefault(row["brand"].lower(), set()).add(num)
+print(f"loaded {len(OFFICIAL)} official numbers")
 
 @app.post("/check-number")
 def check_number(body: NumIn):
