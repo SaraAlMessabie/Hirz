@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -17,29 +17,40 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; color: var(--text);
     background: radial-gradient(120% 60% at 50% 0%, var(--bg2) 0%, var(--bg) 60%) fixed, var(--bg);
-    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif; }
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif; }
+  html[dir=rtl] body { line-height: 1.6; }
   .phone { max-width: 390px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; }
 
   .hero { position: relative; height: 150px; overflow: hidden;
     background: #0b1629 url("img/header_bg.jpg") center bottom / cover no-repeat; }
   .hero img { position: absolute; left: 50%; top: 6px; height: 120px; transform: translateX(-50%);
     filter: drop-shadow(0 0 18px rgba(56,189,248,.25)); }
-  .hero .tag { position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 12.5px; color: #cfe3f7; }
+  .hero .tag { position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 13px; color: #cfe3f7; }
   .marks { position: absolute; top: 12px; display: flex; gap: 3px; }
   .marks i { width: 4px; height: 10px; background: #e2e8f0; transform: skewX(-30deg); border-radius: 1px; }
   .marks.l { left: 14px; } .marks.r { right: 14px; }
   .flag { display: flex; height: 4px; }
   .flag i { flex: 1; } .flag i:nth-child(1){background:#00732f} .flag i:nth-child(2){background:#fff}
   .flag i:nth-child(3){background:#000} .flag i:nth-child(4){background:#ce1126}
+  html[dir=rtl] .flag { flex-direction: row-reverse; }
 
-  .banner { display: none; margin: 12px 18px 0; padding: 10px 12px; border-radius: 10px; font-size: 13.5px;
-    background: var(--amber-bg); border: 1px solid #5a4410; color: #fcd34d; }
+  .langbar { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 18px 0; }
+  .langbar button { padding: 6px 11px; font-size: 13.5px; font-weight: 600; border-radius: 999px;
+    background: rgba(18,35,59,.9); color: var(--text); border: 1px solid var(--line); display: inline-flex; align-items: center; gap: 6px; }
+  .langbar button svg { width: 16px; height: 16px; }
+  .langbar #lang { border-color: #2b6496; color: #cfe9ff; }
+  .toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); max-width: 340px; z-index: 10;
+    background: #1b3a5e; color: #e8f4ff; border: 1px solid #2b6496; border-radius: 12px; padding: 10px 14px;
+    font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .toast.on { opacity: 1; }
+
+  .banner { display: none; margin: 10px 18px 0; padding: 10px 12px; border-radius: 10px; font-size: 13.5px;
+    background: var(--amber-bg); border: 1px solid #5a4410; color: #fcd34d; overflow-wrap: anywhere; }
   .banner.on { display: block; }
 
-  main { padding: 16px 18px 0; }
+  main { padding: 12px 18px 0; }
   .panel { display: none; } .panel.on { display: block; }
-  h1 { font-size: 20px; margin: 0 0 2px; }
-  h1 span { color: var(--muted); font-weight: 500; font-size: 16px; }
+  h1 { font-size: 21px; margin: 0 0 2px; }
   .lead { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
 
   form { display: flex; flex-direction: column; gap: 10px; }
@@ -48,9 +59,12 @@
     width: 100%; padding: 13px 14px; font: inherit; font-size: 16px; color: var(--text);
     background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; outline: none;
   }
+  input[dir=ltr] { text-align: left; }
+  html[dir=rtl] input[dir=ltr]::placeholder { text-align: right; }
   select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
     linear-gradient(135deg, var(--muted) 50%, transparent 50%);
     background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; }
+  html[dir=rtl] select { background-position: 20px 55%, 14px 55%; }
   input:focus, select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56,189,248,.18); }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   button {
@@ -77,10 +91,11 @@
   .result { margin-top: 18px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--card); }
   .result[hidden] { display: none; }
   .verdict { padding: 20px 18px 16px; text-align: center; }
-  .verdict .word { font-size: 34px; font-weight: 800; letter-spacing: .6px; line-height: 1.1; }
+  .verdict .word { font-size: 34px; font-weight: 800; letter-spacing: .6px; line-height: 1.15; }
+  html[dir=rtl] .verdict .word { letter-spacing: 0; }
   .verdict .sub { margin-top: 6px; font-size: 15px; }
   .verdict .score { margin-top: 10px; font-size: 14px; color: var(--muted); }
-  .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); margin: 8px auto 0; max-width: 240px; overflow: hidden; }
+  .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); margin: 8px auto 0; max-width: 240px; overflow: hidden; display: flex; }
   .bar b { display: block; height: 100%; width: 0; transition: width .6s ease; }
   .v-red   { background: var(--red-bg); }   .v-red   .word, .v-red   .sub { color: var(--red); }   .v-red   .bar b { background: var(--red); }
   .v-amber { background: var(--amber-bg); } .v-amber .word, .v-amber .sub { color: var(--amber); } .v-amber .bar b { background: var(--amber); }
@@ -90,21 +105,21 @@
   .body { padding: 16px 18px 18px; }
   .host { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; margin-bottom: 12px; }
   .host b { color: var(--text); font-weight: 600; }
-  h2 { font-size: 15px; margin: 0 0 8px; padding-left: 9px; border-left: 3px solid var(--cyan); }
+  h2 { font-size: 15px; margin: 0 0 8px; padding-inline-start: 9px; border-inline-start: 3px solid var(--cyan); }
   ul.reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   ul.reasons li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; font-size: 15px;
-    background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; }
+    background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; overflow-wrap: anywhere; }
   .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
     font-size: 13px; font-weight: 800; margin-top: 1px; }
   .risk .dot, .dot.no { background: var(--red-bg); color: var(--red); }
   .safe .dot, .dot.yes { background: var(--green-bg); color: var(--green); }
-  .dot.na { background: var(--grey-bg); color: var(--grey); }
+  .neutral .dot, .dot.na { background: var(--grey-bg); color: var(--grey); }
   .empty { color: var(--muted); font-size: 14px; }
   .note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
 
   .signals { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
   .signals div { display: flex; gap: 10px; align-items: center; font-size: 14px; }
-  .signals small { color: var(--muted); margin-left: auto; }
+  .signals small { color: var(--muted); margin-inline-start: auto; text-align: end; }
 
   .actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
   .evidence, .proceed { display: none; flex-direction: column; gap: 8px; }
@@ -118,15 +133,15 @@
 
   .list { display: flex; flex-direction: column; gap: 10px; }
   .item { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
-  .item > button { width: 100%; text-align: left; background: transparent; color: var(--text); padding: 12px 14px;
+  .item > button { width: 100%; text-align: start; background: transparent; color: var(--text); padding: 12px 14px;
     display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; border-radius: 0; font-weight: 500; }
   .item .nm { font-weight: 600; font-size: 15px; }
   .item .meta { grid-column: 1; font-size: 12.5px; color: var(--muted); }
   .chip { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 11.5px; font-weight: 700;
-    padding: 4px 8px; border-radius: 999px; letter-spacing: .3px; }
+    padding: 4px 8px; border-radius: 999px; letter-spacing: .3px; white-space: nowrap; }
   .chip.red { background: var(--red-bg); color: var(--red); } .chip.amber { background: var(--amber-bg); color: var(--amber); }
   .chip.green { background: var(--green-bg); color: var(--green); } .chip.grey { background: var(--grey-bg); color: var(--grey); }
-  .badge { font-size: 10.5px; color: #c4b5fd; border: 1px solid #4c3d8f; border-radius: 6px; padding: 0 5px; margin-left: 6px; }
+  .badge { font-size: 10.5px; color: #c4b5fd; border: 1px solid #4c3d8f; border-radius: 6px; padding: 0 5px; margin-inline-start: 6px; white-space: nowrap; }
   .item .detail { display: none; padding: 0 14px 14px; }
   .item.open .detail { display: block; }
 
@@ -134,7 +149,7 @@
     background: rgba(9,18,34,.96); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
   nav.tabs .inner { width: 100%; max-width: 390px; display: grid; grid-template-columns: repeat(3, 1fr); }
   nav.tabs button { background: transparent; color: var(--muted); border-radius: 0; padding: 9px 4px 10px;
-    display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; }
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 600; }
   nav.tabs button svg { width: 22px; height: 22px; }
   nav.tabs button.on { color: var(--cyan); box-shadow: inset 0 2px 0 var(--cyan); }
   footer { margin-top: 22px; padding: 0 18px; font-size: 12px; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
@@ -145,368 +160,572 @@
   <header class="hero">
     <div class="marks l"><i></i><i></i><i></i><i></i></div>
     <div class="marks r"><i></i><i></i><i></i><i></i></div>
-    <img src="img/hirz_logo.png" alt="Hirz">
-    <div class="tag">Your safeguard against scams · حمايتك من الاحتيال</div>
+    <img src="img/hirz_logo.png" alt="Hirz · حرز">
+    <div class="tag" data-t="tag"></div>
   </header>
   <div class="flag"><i></i><i></i><i></i><i></i></div>
+
+  <div class="langbar">
+    <button id="other" type="button" aria-label="Other languages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span data-t="other"></span></button>
+    <button id="lang" type="button"></button>
+  </div>
   <div id="banner" class="banner" role="status"></div>
 
   <main>
     <!-- ============ LINK ============ -->
-    <section id="p-link" class="panel on" aria-label="Check a link">
-      <h1>Check a link <span>· تحقق من رابط</span></h1>
-      <p class="lead">Paste a link from an SMS, email or chat.</p>
+    <section id="p-link" class="panel on">
+      <h1 data-t="link.h1"></h1>
+      <p class="lead" data-t="link.lead"></p>
       <form id="f-link" autocomplete="off">
-        <input id="link" type="text" inputmode="url" placeholder="https://example.com/login" aria-label="Link to check" required>
-        <button type="submit">Check link</button>
+        <input id="link" type="text" inputmode="url" dir="ltr" placeholder="https://example.com/login" data-t-aria="link.h1" required>
+        <button type="submit" data-t="link.btn"></button>
       </form>
-      <div class="spinner"><i></i><span>Checking the link — this can take a few seconds…</span></div>
+      <div class="spinner"><i></i><span data-t="link.spin"></span></div>
       <div class="error" role="alert"></div>
       <div class="result" hidden>
         <div class="verdict"><div class="word"></div><div class="sub"></div><div class="score"></div><div class="bar"><b></b></div></div>
         <div class="body">
           <div class="host"></div>
-          <h2>Why</h2>
+          <h2 data-t="why"></h2>
           <ul class="reasons"></ul>
           <div class="actions">
             <div id="evidence" class="evidence">
-              <button id="evBtn" type="button">Download evidence report (PDF)</button>
+              <button id="evBtn" type="button"></button>
               <div id="evMsg" class="msg"></div>
             </div>
             <div id="proceed" class="proceed">
-              <button id="proceedBtn" type="button" class="ghost">Proceed anyway</button>
-              <div id="warn" class="warn">This link shows strong signs of a scam. Never enter a password, card number or OTP on it.
-                <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%">I understand — open the link</button></div>
+              <button id="proceedBtn" type="button" class="ghost" data-t="proceed"></button>
+              <div id="warn" class="warn"><span data-t="warn"></span>
+                <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%" data-t="open"></button></div>
               </div>
             </div>
           </div>
-          <div class="note">Risk assessments are advisory and are not proof of fraud.</div>
+          <div class="note" data-t="disclaimer"></div>
         </div>
       </div>
     </section>
 
     <!-- ============ NUMBER ============ -->
-    <section id="p-number" class="panel" aria-label="Check a phone number">
-      <h1>Check a number <span>· تحقق من رقم</span></h1>
-      <p class="lead">Someone called or messaged claiming to be a bank, courier or government office?</p>
+    <section id="p-number" class="panel">
+      <h1 data-t="num.h1"></h1>
+      <p class="lead" data-t="num.lead"></p>
       <form id="f-number" autocomplete="off">
-        <label class="f" for="number">Phone number</label>
-        <input id="number" type="tel" inputmode="tel" placeholder="050 123 4567 or 600 50 2030" required>
-        <label class="f" for="nbrand">Who did they say they were?</label>
-        <select id="nbrand" class="brands"><option value="">Not sure / didn't say</option></select>
-        <button type="submit">Check number</button>
+        <label class="f" for="number" data-t="num.label"></label>
+        <input id="number" type="tel" inputmode="tel" dir="ltr" placeholder="050 123 4567 · 600 50 2030" required>
+        <label class="f" for="nbrand" data-t="num.brand"></label>
+        <select id="nbrand" class="brands"><option value="" data-t="num.none"></option></select>
+        <button type="submit" data-t="num.btn"></button>
       </form>
-      <div class="spinner"><i></i><span>Checking…</span></div>
+      <div class="spinner"><i></i><span data-t="num.spin"></span></div>
       <div class="error" role="alert"></div>
       <div class="result" hidden>
         <div class="verdict"><div class="word"></div><div class="sub"></div><div class="score"></div><div class="bar"><b></b></div></div>
         <div class="body">
           <div class="host"></div>
-          <h2>Why</h2>
+          <h2 data-t="why"></h2>
           <ul class="reasons"></ul>
-          <div class="note">If in doubt, hang up and call the number on the organisation's own website or card.</div>
+          <div class="note" data-t="num.note"></div>
         </div>
       </div>
     </section>
 
     <!-- ============ LISTING ============ -->
-    <section id="p-listing" class="panel" aria-label="Check a maps listing">
-      <h1>Check a listing <span>· تحقق من إعلان</span></h1>
-      <p class="lead">Found a "customer service" listing on Google Maps? Compare it with the brand's official information.</p>
+    <section id="p-listing" class="panel">
+      <h1 data-t="lst.h1"></h1>
+      <p class="lead" data-t="lst.lead"></p>
       <div class="seg" role="tablist">
-        <button id="seg-form" class="on" type="button" role="tab">Check one</button>
-        <button id="seg-demo" type="button" role="tab">Demo listings</button>
+        <button id="seg-form" class="on" type="button" role="tab" data-t="lst.one"></button>
+        <button id="seg-demo" type="button" role="tab" data-t="lst.demo"></button>
       </div>
 
       <div id="l-form">
         <form id="f-listing" autocomplete="off">
-          <label class="f" for="lbrand">Brand</label>
-          <select id="lbrand" class="brands" required><option value="">Choose…</option></select>
-          <label class="f" for="lname">Listing name</label>
-          <input id="lname" type="text" placeholder="e.g. ADCB Customer Care Dubai">
-          <label class="f" for="lphone">Phone on the listing</label>
-          <input id="lphone" type="tel" inputmode="tel" placeholder="e.g. 050 000 1234" required>
-          <label class="f" for="laddr">Address on the listing</label>
-          <input id="laddr" type="text" placeholder="e.g. Office 12, Al Qusais, Dubai">
+          <label class="f" for="lbrand" data-t="lst.brand"></label>
+          <select id="lbrand" class="brands" required><option value="" data-t="lst.choose"></option></select>
+          <label class="f" for="lname" data-t="lst.name"></label>
+          <input id="lname" type="text" data-t-ph="lst.name.ph">
+          <label class="f" for="lphone" data-t="lst.phone"></label>
+          <input id="lphone" type="tel" inputmode="tel" dir="ltr" placeholder="050 000 1234" required>
+          <label class="f" for="laddr" data-t="lst.addr"></label>
+          <input id="laddr" type="text" data-t-ph="lst.addr.ph">
           <div class="row2">
-            <div><label class="f" for="lsite">Website</label><input id="lsite" type="text" inputmode="url" placeholder="optional"></div>
-            <div><label class="f" for="lrev">Reviews</label><input id="lrev" type="number" min="0" placeholder="optional"></div>
+            <div><label class="f" for="lsite" data-t="lst.site"></label><input id="lsite" type="text" inputmode="url" dir="ltr" data-t-ph="optional"></div>
+            <div><label class="f" for="lrev" data-t="lst.rev"></label><input id="lrev" type="number" min="0" dir="ltr" data-t-ph="optional"></div>
           </div>
-          <button type="submit">Check listing</button>
+          <button type="submit" data-t="lst.btn"></button>
         </form>
-        <div class="spinner"><i></i><span>Cross-checking phone, address, map and website…</span></div>
+        <div class="spinner"><i></i><span data-t="lst.spin"></span></div>
         <div class="error" role="alert"></div>
         <div class="result" hidden>
           <div class="verdict"><div class="word"></div><div class="sub"></div></div>
-          <div class="body"><div class="signals"></div><h2>Why</h2><ul class="reasons"></ul>
-            <div class="note">Risk assessments are advisory and are not proof of fraud.</div></div>
+          <div class="body"><div class="signals"></div><h2 data-t="why"></h2><ul class="reasons"></ul>
+            <div class="note" data-t="disclaimer"></div></div>
         </div>
       </div>
 
       <div id="l-demo" hidden>
-        <div class="spinner"><i></i><span>Loading listings…</span></div>
+        <div class="spinner"><i></i><span data-t="lst.loading"></span></div>
         <div class="error" role="alert"></div>
         <div id="demo-list" class="list"></div>
-        <button id="rescan" type="button" class="ghost" style="width:100%;margin-top:12px">Re-scan all listings</button>
-        <p class="note">Listings marked <span class="badge" style="margin:0">sample fake</span> are invented for the demo,
-          using fictional +971 50 000 XXXX numbers. All others were collected from Google Maps.</p>
+        <button id="rescan" type="button" class="ghost" style="width:100%;margin-top:12px" data-t="lst.rescan"></button>
+        <p class="note"><span data-t="lst.note1"></span> <span class="badge" style="margin:0" data-t="badge"></span>
+          <span data-t="lst.note2"></span></p>
       </div>
     </section>
   </main>
   <footer id="foot"></footer>
 </div>
+<div id="toast" class="toast" role="status"></div>
 
-<nav class="tabs" aria-label="Sections"><div class="inner">
+<nav class="tabs"><div class="inner">
   <button id="t-link" class="on" type="button" aria-controls="p-link">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Link</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span data-t="tab.link"></span></button>
   <button id="t-number" type="button" aria-controls="p-number">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Number</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span data-t="tab.number"></span></button>
   <button id="t-listing" type="button" aria-controls="p-listing">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Listing</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span data-t="tab.listing"></span></button>
 </div></nav>
 
 <script>
-  // Served by hirz_server.py -> same origin. Opened as a file -> talk to the laptop's server.
-  const qs = new URLSearchParams(location.search);
-  const BASE = (qs.get("server") || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8001")).replace(/\/$/, "");
-  const $ = (id) => document.getElementById(id);
-  const within = (panel, sel) => panel.querySelector(sel);
+// =====================================================================
+//  Strings. English and Arabic; add a language by adding a block here.
+// =====================================================================
+const STR = {
+  en: {
+    "tag": "Your safeguard against scams", "other": "Other languages", "lang": "العربية",
+    "other.toast": "More languages are coming soon.",
+    "tab.link": "Link", "tab.number": "Number", "tab.listing": "Listing",
+    "link.h1": "Check a link", "link.lead": "Paste a link from an SMS, email or chat.",
+    "link.btn": "Check link", "link.spin": "Checking the link — this can take a few seconds…",
+    "why": "Why", "disclaimer": "Risk assessments are advisory and are not proof of fraud.",
+    "realdomain": "Real domain: ", "fulladdr": " (full address: {h})", "score": "Risk score {s} / 100",
+    "noreasons": "No specific warning signs were reported.",
+    "ev.btn": "Download evidence report (PDF)", "ev.hint": "English and Arabic, ready to send to the police.",
+    "ev.building": "Building report…", "ev.collecting": "Collecting registration, certificate and hosting details — about 10–30 seconds.",
+    "ev.done": "Downloaded ✓  (download again)", "ev.saved": "Saved as {f}.", "ev.hash": " Integrity hash {h}…",
+    "proceed": "Proceed anyway", "open": "I understand — open the link",
+    "warn": "This link shows strong signs of a scam. Never enter a password, card number or OTP on it.",
+    "v.link.malicious": ["DANGER", "This link looks like a scam. Don't open it."],
+    "v.link.suspicious": ["CAREFUL", "Some warning signs. Check with the sender another way."],
+    "v.link.clean": ["NO WARNINGS", "No warning signs found. This does not guarantee safety."],
+    "v.link.unknown": ["UNKNOWN", "We couldn't assess this link."],
+    "num.h1": "Check a number", "num.lead": "Someone called or messaged claiming to be a bank, courier or government office?",
+    "num.label": "Phone number", "num.brand": "Who did they say they were?", "num.none": "Not sure / didn't say",
+    "num.btn": "Check number", "num.spin": "Checking…", "num.number": "Number: ",
+    "num.note": "If in doubt, hang up and call the number on the organisation's own website or card.",
+    "v.num.official": ["OFFICIAL NUMBER", "This matches a published customer service number."],
+    "v.num.malicious": ["DANGER", "Don't call back and never share codes or card details."],
+    "v.num.suspicious": ["CAREFUL", "Not a number this organisation publishes. Use the one on its own website."],
+    "v.num.clean": ["NO WARNINGS", "No warning signs found. This does not prove the caller is genuine."],
+    "v.num.unknown": ["UNKNOWN", "We couldn't assess this number."],
+    "lst.h1": "Check a listing", "lst.lead": "Found a \"customer service\" listing on Google Maps? Compare it with the brand's official information.",
+    "lst.one": "Check one", "lst.demo": "Demo listings", "lst.brand": "Brand", "lst.choose": "Choose…",
+    "lst.name": "Listing name", "lst.name.ph": "e.g. ADCB Customer Care Dubai", "lst.phone": "Phone on the listing",
+    "lst.addr": "Address on the listing", "lst.addr.ph": "e.g. Office 12, Al Qusais, Dubai",
+    "lst.site": "Website", "lst.rev": "Reviews", "optional": "optional", "lst.btn": "Check listing",
+    "lst.spin": "Cross-checking phone, address, map and website…", "lst.loading": "Loading listings…",
+    "lst.rescan": "Re-scan all listings", "badge": "sample fake",
+    "lst.note1": "Listings marked", "lst.note2": "are invented for the demo, using fictional +971 50 000 XXXX numbers. All others were collected from Google Maps.",
+    "lst.meta": "{p} · {n} disagree",
+    "v.lst.fabricated": ["FAKE LISTING", "Don't call this number."],
+    "v.lst.suspicious": ["CAREFUL", "Some details don't match the brand's official information."],
+    "v.lst.genuine": ["MATCHES OFFICIAL INFO", "Its details match the brand's own published information."],
+    "v.lst.unverified": ["NOT VERIFIED", "Nothing contradicts it, but too little could be checked."],
+    "sig.phone_in_official": "Phone is the brand's published number", "sig.address_in_branches": "Address is on the official branch list",
+    "sig.found_in_osm": "Mapped on OpenStreetMap at this address", "sig.web_mentions": "Name and phone appear elsewhere online",
+    "sig.website_official": "Website is the brand's official domain",
+    "sig.yes": "agrees", "sig.no": "disagrees", "sig.na": "not checked",
+    "err.server": "Couldn't reach the Hirz server. Start it with:", "err.api": "The checker API isn't running. Start it with:",
+    "err.http": "The server returned an error (HTTP {c}).", "foot": "Hirz server {u}",
+  },
+  ar: {
+    "tag": "حمايتك من الاحتيال", "other": "لغات أخرى", "lang": "English",
+    "other.toast": "ستتوفر لغات أخرى قريبا.",
+    "tab.link": "رابط", "tab.number": "رقم", "tab.listing": "إعلان",
+    "link.h1": "تحقق من رابط", "link.lead": "الصق رابطا وصلك في رسالة نصية أو بريد إلكتروني أو محادثة.",
+    "link.btn": "افحص الرابط", "link.spin": "جار فحص الرابط، قد يستغرق ذلك بضع ثوان…",
+    "why": "الأسباب", "disclaimer": "تقييمات المخاطر استرشادية وليست دليلا على الاحتيال.",
+    "realdomain": "النطاق الحقيقي: ", "fulladdr": " (العنوان الكامل: {h})", "score": "درجة الخطورة {s} / 100",
+    "noreasons": "لم يتم الإبلاغ عن مؤشرات تحذيرية محددة.",
+    "ev.btn": "تنزيل تقرير الأدلة (PDF)", "ev.hint": "بالعربية والإنجليزية، جاهز للإرسال إلى الشرطة.",
+    "ev.building": "جار إعداد التقرير…", "ev.collecting": "جار جمع بيانات التسجيل والشهادة والاستضافة، نحو 10 إلى 30 ثانية.",
+    "ev.done": "تم التنزيل ✓ (تنزيل مرة أخرى)", "ev.saved": "حفظ باسم {f}.", "ev.hash": " بصمة السلامة {h}…",
+    "proceed": "المتابعة على أي حال", "open": "أفهم المخاطر، افتح الرابط",
+    "warn": "يظهر هذا الرابط مؤشرات قوية على الاحتيال. لا تدخل فيه أبدا كلمة مرور أو رقم بطاقة أو رمز تحقق.",
+    "v.link.malicious": ["خطر", "يبدو هذا الرابط احتياليا. لا تفتحه."],
+    "v.link.suspicious": ["احذر", "توجد بعض المؤشرات التحذيرية. تحقق من المرسل بطريقة أخرى."],
+    "v.link.clean": ["لا توجد تحذيرات", "لم يتم العثور على مؤشرات تحذيرية. هذا لا يضمن الأمان."],
+    "v.link.unknown": ["غير معروف", "تعذر تقييم هذا الرابط."],
+    "num.h1": "تحقق من رقم", "num.lead": "اتصل بك أو راسلك شخص يدعي أنه من بنك أو شركة شحن أو جهة حكومية؟",
+    "num.label": "رقم الهاتف", "num.brand": "بأي جهة عرف عن نفسه؟", "num.none": "غير متأكد / لم يذكر",
+    "num.btn": "افحص الرقم", "num.spin": "جار الفحص…", "num.number": "الرقم: ",
+    "num.note": "إذا ساورك الشك، أنه المكالمة واتصل بالرقم المنشور على موقع الجهة الرسمي أو على بطاقتك.",
+    "v.num.official": ["رقم رسمي", "هذا الرقم يطابق رقم خدمة عملاء منشورا رسميا."],
+    "v.num.malicious": ["خطر", "لا تعاود الاتصال ولا تشارك أي رموز أو بيانات بطاقة."],
+    "v.num.suspicious": ["احذر", "هذا ليس رقما تنشره هذه الجهة. استخدم الرقم المنشور على موقعها."],
+    "v.num.clean": ["لا توجد تحذيرات", "لم يتم العثور على مؤشرات تحذيرية. هذا لا يثبت أن المتصل حقيقي."],
+    "v.num.unknown": ["غير معروف", "تعذر تقييم هذا الرقم."],
+    "lst.h1": "تحقق من إعلان", "lst.lead": "وجدت إعلانا لخدمة العملاء على خرائط Google؟ قارنه بالمعلومات الرسمية للجهة.",
+    "lst.one": "فحص إعلان", "lst.demo": "إعلانات تجريبية", "lst.brand": "الجهة", "lst.choose": "اختر…",
+    "lst.name": "اسم الإعلان", "lst.name.ph": "مثال: ADCB Customer Care Dubai", "lst.phone": "الهاتف في الإعلان",
+    "lst.addr": "العنوان في الإعلان", "lst.addr.ph": "مثال: مكتب 12، القصيص، دبي",
+    "lst.site": "الموقع الإلكتروني", "lst.rev": "عدد التقييمات", "optional": "اختياري", "lst.btn": "افحص الإعلان",
+    "lst.spin": "جار مطابقة الهاتف والعنوان والخريطة والموقع…", "lst.loading": "جار تحميل الإعلانات…",
+    "lst.rescan": "إعادة فحص جميع الإعلانات", "badge": "نموذج مزيف",
+    "lst.note1": "الإعلانات المميزة بعلامة", "lst.note2": "مختلقة لأغراض العرض وتستخدم أرقاما وهمية بصيغة ⁦+971 50 000 XXXX⁩. أما البقية فجمعت من خرائط Google.",
+    "lst.meta": "{p} · فحوصات متعارضة: {n}",
+    "v.lst.fabricated": ["إعلان مزيف", "لا تتصل بهذا الرقم."],
+    "v.lst.suspicious": ["احذر", "بعض التفاصيل لا تطابق المعلومات الرسمية للجهة."],
+    "v.lst.genuine": ["يطابق المعلومات الرسمية", "تفاصيله تطابق المعلومات المنشورة من الجهة نفسها."],
+    "v.lst.unverified": ["غير مؤكد", "لا شيء يناقضه، لكن تعذر التحقق من معظم تفاصيله."],
+    "sig.phone_in_official": "رقم الهاتف هو الرقم المنشور للجهة", "sig.address_in_branches": "العنوان مدرج في قائمة الفروع الرسمية",
+    "sig.found_in_osm": "موجود على OpenStreetMap في هذا العنوان", "sig.web_mentions": "الاسم والرقم يظهران في مواقع أخرى",
+    "sig.website_official": "الموقع الإلكتروني هو النطاق الرسمي للجهة",
+    "sig.yes": "يتفق", "sig.no": "يتعارض", "sig.na": "لم يفحص",
+    "err.server": "تعذر الوصول إلى خادم حرز. شغله بالأمر:", "err.api": "واجهة الفحص لا تعمل. شغلها بالأمر:",
+    "err.http": "أعاد الخادم خطأ (HTTP {c}).", "foot": "خادم حرز {u}",
+  },
+};
 
-  // ---------- shared helpers
-  async function post(path, body) {
-    const r = await fetch(BASE + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!r.ok) {
-      let detail = ""; try { detail = (await r.json()).detail || ""; } catch (_) {}
-      throw new Error(detail || "The server returned an error (HTTP " + r.status + ").");
-    }
-    return r;
-  }
-  function unreachable(err) {
-    return err instanceof TypeError
-      ? "Couldn't reach the Hirz server" + (BASE ? " at " + BASE : "") + ". Start it with: python -m uvicorn hirz_server:app --port 8001"
-      : err.message;
-  }
-  function busy(panel, on) {
-    within(panel, ".spinner").classList.toggle("on", on);
-    panel.querySelectorAll("form button").forEach((b) => (b.disabled = on));
-  }
-  function showError(panel, msg) { const e = within(panel, ".error"); e.textContent = msg; e.classList.add("on"); }
-  function clearOut(panel) { within(panel, ".error").classList.remove("on"); within(panel, ".result").hidden = true; }
+// Arabic for the reason codes the API returns (English uses the API's own text).
+const REASON_AR = {
+  free_host: "مستضاف على منصة مجانية تصدر شهادات HTTPS فورية",
+  cheap_tld: "يستخدم امتداد نطاق رخيصا يشتريه المحتالون بكميات كبيرة",
+  n_hyphens: "اسم النطاق محشو بشرطات", dom_len: "اسم نطاق طويل بشكل غير معتاد",
+  entropy: "اسم النطاق يبدو مولدا عشوائيا", n_digits: "أرقام مضافة إلى اسم النطاق",
+  digit_ratio: "نسبة عالية من الأرقام في اسم النطاق", brand_in_dom: "يحتوي على اسم علامة تجارية محمية",
+  kw_in_dom: "كلمات أمنية في اسم النطاق", ct_free_ca: "الشهادة صادرة عن جهة مجانية",
+  ct_age_bucket: "صدرت شهادة النطاق حديثا جدا", ct_max_san: "الشهادة تغطي عددا كبيرا من النطاقات غير المرتبطة (إصدار بالجملة)",
+  ct_found: "لم يعثر على سجل للشهادات",
+  _rule_brand_misplaced: "اسم العلامة التجارية يظهر في النطاق الفرعي بينما النطاق الحقيقي مختلف",
+  _rule_kw_in_sub: "كلمات أمنية مستخدمة في النطاق الفرعي", _rule_deep_sub: "تداخل غير معتاد في النطاقات الفرعية",
+  official: "يطابق رقم خدمة العملاء المنشور للجهة",
+  mobile_prefix: "رقم هاتف متحرك شخصي، بينما تنشر البنوك وشركات الشحن والجهات الحكومية في الإمارات أرقاما مجانية أو أرضية",
+  line_type: "رقم مجاني أو أرضي، وهذا يتوافق مع أرقام خدمة العملاء الحقيقية",
+  not_in_official_set: "ليس من الأرقام المنشورة رسميا لـ{b}", unparseable: "ليس رقم هاتف صالحا",
+};
 
-  function fillCard(card, { tone, word, sub, score, reasons }) {
-    const v = within(card, ".verdict");
-    v.className = "verdict v-" + tone;
-    within(v, ".word").textContent = word;
-    within(v, ".sub").textContent = sub;
-    const sc = within(v, ".score"), bar = within(v, ".bar b");
-    if (sc) sc.textContent = Number.isFinite(score) ? "Risk score " + score + " / 100" : "";
-    if (bar) { bar.style.width = "0"; requestAnimationFrame(() => (bar.style.width = (Number.isFinite(score) ? score : 0) + "%")); }
-    const ul = within(card, ".reasons"); ul.innerHTML = "";
-    if (!reasons.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No specific warning signs were reported."; ul.append(li); }
-    for (const r of reasons) {
-      const li = document.createElement("li"), safe = r.direction === "safe";
-      li.className = safe ? "safe" : "risk";
-      const d = document.createElement("span"); d.className = "dot"; d.textContent = safe ? "✓" : "!";
-      const t = document.createElement("span"); t.textContent = r.text || r.code || "";
-      li.append(d, t); ul.append(li);
-    }
-    card.hidden = false;
-    card.scrollIntoView({ behavior: "smooth", block: "start" });
+// =====================================================================
+//  i18n plumbing
+// =====================================================================
+let LANG = "en";
+try { LANG = localStorage.getItem("hirz.lang") || (navigator.language || "").startsWith("ar") && "ar" || "en"; } catch (_) {}
+const t = (k, vars = {}) => {
+  let s = (STR[LANG] && STR[LANG][k]) ?? STR.en[k] ?? k;
+  if (typeof s === "string") for (const [a, b] of Object.entries(vars)) s = s.replaceAll("{" + a + "}", b);
+  return s;
+};
+const iso = (s) => "⁦" + s + "⁩";      // keep numbers, domains, commands left-to-right inside Arabic
+const BRANDS = {};                               // key -> {en, ar} display names
+const brandName = (k) => (BRANDS[k] && BRANDS[k].name) || k || "";
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  document.title = LANG === "ar" ? "حرز — حمايتك من الاحتيال" : "Hirz — your safeguard against scams";
+  document.querySelectorAll("[data-t]").forEach((el) => (el.textContent = t(el.dataset.t)));
+  document.querySelectorAll("[data-t-ph]").forEach((el) => (el.placeholder = t(el.dataset.tPh)));
+  document.querySelectorAll("[data-t-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.tAria)));
+  $("lang").textContent = t("lang");
+  $("lang").setAttribute("aria-label", LANG === "ar" ? "Switch to English" : "التبديل إلى العربية");
+  $("other").setAttribute("aria-label", t("other"));
+  $("foot").textContent = t("foot", { u: iso(BASE || location.origin) });
+  if (!evBusy) resetEvidence(false);
+  renderAll();
+  showBanner();
+}
+
+// =====================================================================
+//  App
+// =====================================================================
+const qs = new URLSearchParams(location.search);
+const BASE = (qs.get("server") || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8001")).replace(/\/$/, "");
+const $ = (id) => document.getElementById(id);
+const within = (el, sel) => el.querySelector(sel);
+const CMD_SERVER = "python -m uvicorn hirz_server:app --port 8001", CMD_API = "python -m uvicorn api:app --port 8000";
+
+async function post(path, body) {
+  const r = await fetch(BASE + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) {
+    let detail = ""; try { detail = (await r.json()).detail || ""; } catch (_) {}
+    const e = new Error(detail || t("err.http", { c: r.status })); e.http = true; throw e;
   }
+  return r;
+}
+const errText = (err) => err instanceof TypeError ? t("err.server") + " " + iso(CMD_SERVER) : err.message;
+function busy(el, on) { within(el, ".spinner").classList.toggle("on", on); el.querySelectorAll("form button").forEach((b) => (b.disabled = on)); }
+function showError(el, msg) { const e = within(el, ".error"); e.textContent = msg; e.classList.add("on"); }
+function clearOut(el) { within(el, ".error").classList.remove("on"); within(el, ".result").hidden = true; }
+let toastTimer;
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("on"), 2600); }
 
-  // ---------- tabs
-  const TABS = ["link", "number", "listing"];
-  function showTab(name) {
-    TABS.forEach((t) => { $("t-" + t).classList.toggle("on", t === name); $("p-" + t).classList.toggle("on", t === name); });
-    window.scrollTo({ top: 0 });
+let health = null;
+function showBanner() {
+  const b = $("banner"); b.classList.remove("on");
+  if (health === "down") { b.textContent = t("err.server") + " " + iso(CMD_SERVER); b.classList.add("on"); }
+  else if (health === "noapi") { b.textContent = t("err.api") + " " + iso(CMD_API); b.classList.add("on"); }
+}
+
+function verdictBlock(card, tone, word, sub, score) {
+  const v = within(card, ".verdict"); v.className = "verdict v-" + tone;
+  within(v, ".word").textContent = word; within(v, ".sub").textContent = sub;
+  const sc = within(v, ".score"), bar = within(v, ".bar b");
+  if (sc) sc.textContent = Number.isFinite(score) ? t("score", { s: score }) : "";
+  if (bar) { bar.style.width = "0"; requestAnimationFrame(() => (bar.style.width = (Number.isFinite(score) ? score : 0) + "%")); }
+}
+function fillReasons(ul, items) {              // items: [{text, kind: "risk"|"safe"|"neutral"}]
+  ul.innerHTML = "";
+  if (!items.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("noreasons"); ul.append(li); return; }
+  for (const it of items) {
+    const li = document.createElement("li"); li.className = it.kind;
+    const d = document.createElement("span"); d.className = "dot"; d.textContent = it.kind === "safe" ? "✓" : it.kind === "neutral" ? "–" : "!";
+    const s = document.createElement("span"); s.textContent = it.text; li.append(d, s); ul.append(li);
   }
-  TABS.forEach((t) => $("t-" + t).addEventListener("click", () => showTab(t)));
+}
+const apiReasons = (reasons, brand) => (reasons || []).map((r) => ({
+  kind: r.direction === "safe" ? "safe" : "risk",
+  text: LANG === "ar" ? (REASON_AR[r.code] || r.text || r.code).replace("{b}", brand || "الجهة") : (r.text || r.code || ""),
+}));
 
-  // ---------- health + brands
-  (async () => {
-    $("foot").textContent = "Hirz server " + (BASE || location.origin);
-    try {
-      const h = await (await fetch(BASE + "/api/health")).json();
-      if (!h.checker_api) { $("banner").textContent = "The checker API isn't running. Start it with: python -m uvicorn api:app --port 8000"; $("banner").classList.add("on"); }
-    } catch (_) {
-      $("banner").textContent = "Can't reach the Hirz server. Start it with: python -m uvicorn hirz_server:app --port 8001, then open http://localhost:8001";
-      $("banner").classList.add("on");
-    }
-    try {
-      const brands = await (await fetch(BASE + "/api/brands")).json();
-      document.querySelectorAll("select.brands").forEach((sel) => {
-        for (const b of brands) { const o = document.createElement("option"); o.value = b.brand; o.textContent = b.display_name; o.dataset.name = b.display_name; sel.append(o); }
-      });
-    } catch (_) {}
-  })();
+// ---------- tabs
+const TABS = ["link", "number", "listing"];
+function showTab(name) {
+  TABS.forEach((x) => { $("t-" + x).classList.toggle("on", x === name); $("p-" + x).classList.toggle("on", x === name); });
+  window.scrollTo({ top: 0 });
+}
+TABS.forEach((x) => $("t-" + x).addEventListener("click", () => showTab(x)));
+$("lang").addEventListener("click", () => { LANG = LANG === "ar" ? "en" : "ar"; try { localStorage.setItem("hirz.lang", LANG); } catch (_) {} applyLang(); });
+$("other").addEventListener("click", () => toast(t("other.toast")));   // placeholder: more languages not implemented yet
 
-  // ---------- LINK
-  const LINK = {
-    malicious:  ["red",   "DANGER",      "This link looks like a scam. Don't open it."],
-    suspicious: ["amber", "CAREFUL",     "Some warning signs. Check with the sender another way."],
-    clean:      ["green", "NO WARNINGS", "No warning signs found. This does not guarantee safety."],
-    unknown:    ["grey",  "UNKNOWN",     "We couldn't assess this link."],
-  };
-  let lastUrl = "";
-  const pLink = $("p-link");
-  function resetEvidence() {
-    ["evidence", "proceed", "warn"].forEach((id) => $(id).classList.remove("on"));
-    $("evBtn").disabled = false; $("evBtn").textContent = "Download evidence report (PDF)";
-    $("evMsg").className = "msg"; $("evMsg").textContent = "English and Arabic, ready to send to the police.";
+// ---------- LINK
+const pLink = $("p-link");
+let lastUrl = "", linkData = null, evBusy = false;
+function resetEvidence(hide = true) {
+  if (hide) ["evidence", "proceed", "warn"].forEach((id) => $(id).classList.remove("on"));
+  $("evBtn").disabled = false; $("evBtn").textContent = t("ev.btn");
+  $("evMsg").className = "msg"; $("evMsg").textContent = t("ev.hint");
+}
+function renderLink(scroll) {
+  if (!linkData) return;
+  const d = linkData, key = ["malicious", "suspicious", "clean"].includes(d.verdict) ? d.verdict : "unknown";
+  const tone = { malicious: "red", suspicious: "amber", clean: "green", unknown: "grey" }[key];
+  const [word, sub] = t("v.link." + key);
+  const card = within(pLink, ".result");
+  verdictBlock(card, tone, word, sub, d.score);
+  const host = within(card, ".host"); host.innerHTML = "";
+  if (d.host) {
+    const b = document.createElement("b"); b.textContent = iso(d.reg_domain || d.host);
+    host.append(t("realdomain"), b);
+    if (d.reg_domain && d.host !== d.reg_domain) host.append(t("fulladdr", { h: iso(d.host) }));
   }
-  $("f-link").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const url = $("link").value.trim(); if (!url) return;
-    lastUrl = url; clearOut(pLink); resetEvidence(); busy(pLink, true);
-    try {
-      const d = await (await post("/api/check", { url })).json();
-      const [tone, word, sub] = LINK[d.verdict] || LINK.unknown;
-      const host = within(pLink, ".host"); host.innerHTML = "";
-      if (d.host) { const b = document.createElement("b"); b.textContent = d.reg_domain || d.host; host.append("Real domain: ", b);
-        if (d.reg_domain && d.host !== d.reg_domain) host.append(" (full address: " + d.host + ")"); }
-      if (d.verdict === "malicious" || d.verdict === "suspicious") $("evidence").classList.add("on");
-      if (d.verdict === "malicious") $("proceed").classList.add("on");
-      fillCard(within(pLink, ".result"), { tone, word, sub, score: d.score, reasons: d.reasons || [] });
-    } catch (err) { showError(pLink, unreachable(err)); }
-    finally { busy(pLink, false); }
-  });
-  $("evBtn").addEventListener("click", async () => {
-    const btn = $("evBtn"), msg = $("evMsg");
-    btn.disabled = true; btn.textContent = "Building report…"; msg.className = "msg";
-    msg.textContent = "Collecting registration, certificate and hosting details — about 10–30 seconds.";
-    try {
-      const r = await post("/api/evidence", { url: lastUrl });
-      const blob = await r.blob(), id = r.headers.get("X-Evidence-Id") || "report";
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = "hirz-evidence-" + id + ".pdf";
-      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      btn.textContent = "Downloaded ✓  (download again)";
-      const h = r.headers.get("X-Bundle-SHA256") || "";
-      msg.textContent = "Saved as " + a.download + (h ? ". Integrity hash " + h.slice(0, 16) + "…" : ".");
-    } catch (err) { btn.textContent = "Download evidence report (PDF)"; msg.className = "msg err"; msg.textContent = unreachable(err); }
-    finally { btn.disabled = false; }
-  });
-  $("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
-  $("openBtn").addEventListener("click", () => window.open(/^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl, "_blank", "noopener,noreferrer"));
+  fillReasons(within(card, ".reasons"), apiReasons(d.reasons));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-link").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = $("link").value.trim(); if (!url) return;
+  lastUrl = url; linkData = null; clearOut(pLink); resetEvidence(); busy(pLink, true);
+  try {
+    linkData = await (await post("/api/check", { url })).json();
+    if (linkData.verdict === "malicious" || linkData.verdict === "suspicious") $("evidence").classList.add("on");
+    if (linkData.verdict === "malicious") $("proceed").classList.add("on");
+    renderLink(true);
+  } catch (err) { showError(pLink, errText(err)); }
+  finally { busy(pLink, false); }
+});
+$("evBtn").addEventListener("click", async () => {
+  const btn = $("evBtn"), msg = $("evMsg");
+  evBusy = true; btn.disabled = true; btn.textContent = t("ev.building"); msg.className = "msg"; msg.textContent = t("ev.collecting");
+  try {
+    const r = await post("/api/evidence", { url: lastUrl });
+    const blob = await r.blob(), id = r.headers.get("X-Evidence-Id") || "report";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "hirz-evidence-" + id + ".pdf";
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    btn.textContent = t("ev.done");
+    const h = r.headers.get("X-Bundle-SHA256") || "";
+    msg.textContent = t("ev.saved", { f: iso(a.download) }) + (h ? t("ev.hash", { h: iso(h.slice(0, 16)) }) : "");
+  } catch (err) { btn.textContent = t("ev.btn"); msg.className = "msg err"; msg.textContent = errText(err); }
+  finally { btn.disabled = false; evBusy = false; }
+});
+$("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
+$("openBtn").addEventListener("click", () => window.open(/^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl, "_blank", "noopener,noreferrer"));
 
-  // ---------- NUMBER
-  const pNum = $("p-number");
-  $("f-number").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const number = $("number").value.trim(); if (!number) return;
-    const sel = $("nbrand"), brandName = sel.value ? sel.selectedOptions[0].dataset.name : null;
-    clearOut(pNum); busy(pNum, true);
-    try {
-      const d = await (await post("/api/check-number", { number, brand_context: brandName })).json();
-      const reasons = d.reasons || [], official = reasons.some((r) => r.code === "official");
-      let card;
-      if (official) card = ["green", "OFFICIAL NUMBER", "This matches a published customer service number."];
-      else if (d.verdict === "malicious") card = ["red", "DANGER", "Don't call back and never share codes or card details."];
-      else if (d.verdict === "suspicious") card = ["amber", "CAREFUL", "Not a number this organisation publishes. Use the one on its own website."];
-      else if (d.verdict === "clean") card = ["green", "NO WARNINGS", "No warning signs found. This does not prove the caller is genuine."];
-      else card = ["grey", "UNKNOWN", "We couldn't assess this number."];
-      within(pNum, ".host").innerHTML = "";
-      if (d.number) { const b = document.createElement("b"); b.textContent = d.number; within(pNum, ".host").append("Number: ", b); }
-      fillCard(within(pNum, ".result"), { tone: card[0], word: card[1], sub: card[2], score: d.score, reasons });
-    } catch (err) { showError(pNum, unreachable(err)); }
-    finally { busy(pNum, false); }
-  });
+// ---------- NUMBER
+const pNum = $("p-number");
+let numData = null, numBrand = "";
+function renderNumber(scroll) {
+  if (!numData) return;
+  const d = numData, reasons = d.reasons || [];
+  const key = reasons.some((r) => r.code === "official") ? "official"
+    : ["malicious", "suspicious", "clean"].includes(d.verdict) ? d.verdict : "unknown";
+  const tone = { official: "green", malicious: "red", suspicious: "amber", clean: "green", unknown: "grey" }[key];
+  const [word, sub] = t("v.num." + key);
+  const card = within(pNum, ".result");
+  verdictBlock(card, tone, word, sub, d.score);
+  const host = within(card, ".host"); host.innerHTML = "";
+  if (d.number) { const b = document.createElement("b"); b.textContent = iso(d.number); host.append(t("num.number"), b); }
+  fillReasons(within(card, ".reasons"), apiReasons(reasons, brandName(numBrand)));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-number").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const number = $("number").value.trim(); if (!number) return;
+  numBrand = $("nbrand").value;
+  const ctx = numBrand ? (BRANDS[numBrand] && BRANDS[numBrand].en) || numBrand : null;
+  numData = null; clearOut(pNum); busy(pNum, true);
+  try { numData = await (await post("/api/check-number", { number, brand_context: ctx })).json(); renderNumber(true); }
+  catch (err) { showError(pNum, errText(err)); }
+  finally { busy(pNum, false); }
+});
 
-  // ---------- LISTING
-  const LISTING = {
-    fabricated: ["red",   "FAKE LISTING",          "Don't call this number."],
-    suspicious: ["amber", "CAREFUL",               "Some details don't match the brand's official information."],
-    genuine:    ["green", "MATCHES OFFICIAL INFO", "Its details match the brand's own published information."],
-    unverified: ["grey",  "NOT VERIFIED",          "Nothing contradicts it, but too little could be checked."],
-  };
-  const SIGNALS = [
-    ["phone_in_official", "Phone is the brand's published number"],
-    ["address_in_branches", "Address is on the official branch list"],
-    ["found_in_osm", "Mapped on OpenStreetMap at this address"],
-    ["web_mentions", "Name and phone appear elsewhere online"],
-    ["website_official", "Website is the brand's official domain"],
-  ];
-  function signalsHTML(row) {
-    const box = document.createElement("div"); box.className = "signals";
-    for (const [k, label] of SIGNALS) {
-      let v = row[k];
-      if (k === "web_mentions") v = v === "" || v == null ? "" : (Number(v) >= 2 ? "true" : "false");
-      const line = document.createElement("div"), d = document.createElement("span");
-      d.className = "dot " + (v === "true" ? "yes" : v === "false" ? "no" : "na");
-      d.textContent = v === "true" ? "✓" : v === "false" ? "✗" : "–";
-      const t = document.createElement("span"); t.textContent = label;
-      const s = document.createElement("small"); s.textContent = v === "true" ? "agrees" : v === "false" ? "disagrees" : "not checked";
-      line.append(d, t, s); box.append(line);
-    }
-    return box;
+// ---------- LISTING
+const LTONE = { fabricated: "red", suspicious: "amber", genuine: "green", unverified: "grey" };
+const SIGNALS = ["phone_in_official", "address_in_branches", "found_in_osm", "web_mentions", "website_official"];
+const sigVal = (row, k) => k === "web_mentions"
+  ? (row[k] === "" || row[k] == null ? "" : Number(row[k]) >= 2 ? "true" : "false") : String(row[k] ?? "");
+
+function signalsBox(row) {
+  const box = document.createElement("div"); box.className = "signals";
+  for (const k of SIGNALS) {
+    const v = sigVal(row, k), line = document.createElement("div"), d = document.createElement("span");
+    d.className = "dot " + (v === "true" ? "yes" : v === "false" ? "no" : "na");
+    d.textContent = v === "true" ? "✓" : v === "false" ? "✗" : "–";
+    const s = document.createElement("span"); s.textContent = t("sig." + k);
+    const sm = document.createElement("small"); sm.textContent = t(v === "true" ? "sig.yes" : v === "false" ? "sig.no" : "sig.na");
+    line.append(d, s, sm); box.append(line);
   }
-  function reasonsList(reasons) {
-    const ul = document.createElement("ul"); ul.className = "reasons";
-    for (const text of reasons) {
-      const li = document.createElement("li"), d = document.createElement("span"), t = document.createElement("span");
+  return box;
+}
+// English: the scanner's own sentences. Arabic: built from the same check results.
+function listingReasons(row) {
+  if (LANG !== "ar") {
+    return (row.reasons || []).map((text) => {
       const neutral = /not checked|could not be checked|neither confirm|no official branch list|has no website/i.test(text);
       const good = /published helpline|matches|is an official|shows a .* location|consistent with|appear on \d+ other/i.test(text);
-      li.className = good ? "safe" : neutral ? "" : "risk";
-      d.className = "dot" + (neutral && !good ? " na" : ""); d.textContent = good ? "✓" : neutral ? "–" : "!";
-      t.textContent = text; li.append(d, t); ul.append(li);
-    }
-    return ul;
+      return { text, kind: good ? "safe" : neutral ? "neutral" : "risk" };
+    });
   }
-  const pList = $("p-listing"), lForm = $("l-form"), lDemo = $("l-demo");
-  $("seg-form").addEventListener("click", () => { $("seg-form").classList.add("on"); $("seg-demo").classList.remove("on"); lForm.hidden = false; lDemo.hidden = true; });
-  $("seg-demo").addEventListener("click", () => { $("seg-demo").classList.add("on"); $("seg-form").classList.remove("on"); lForm.hidden = true; lDemo.hidden = false; loadDemo(false); });
+  const b = brandName(row.brand) || "الجهة", n = Number(row.disagreement_count || 0), out = [];
+  const v = (k) => sigVal(row, k), phone = iso(row.phone || "");
+  const kind = { fabricated: "risk", suspicious: "risk", genuine: "safe", unverified: "neutral" }[row.verdict] || "neutral";
+  if (row.verdict === "fabricated") out.push({ kind, text: row.phone_verdict === "malicious"
+      ? `مزيف بشكل قاطع: ${b} لا تنشر رقم هاتف متحرك شخصي كرقم لخدمة العملاء.`
+      : `مزيف بشكل قاطع: ${n} من الفحوصات المستقلة تتعارض مع المعلومات الرسمية لـ${b}.` });
+  else if (row.verdict === "genuine" && v("found_in_osm") === "false") out.push({ kind,
+      text: `رقم الهاتف هو الرقم المنشور لـ${b}. الإعلان غير موجود على OpenStreetMap، لكن تغطية الخرائط في الإمارات غير مكتملة، لذا لا يعد ذلك وحده مؤشرا تحذيريا.` });
+  else if (row.verdict === "genuine") out.push({ kind, text: `يتوافق مع المعلومات الرسمية لـ${b} في جميع الفحوصات التي أجريت.` });
+  else if (row.verdict === "suspicious") out.push({ kind, text: `${n} من الفحوصات تتعارض مع المعلومات الرسمية لـ${b}. اتصل بالرقم المنشور على موقع ${b} الرسمي بدلا من ذلك.` });
+  else out.push({ kind, text: "لا شيء يناقض هذا الإعلان، لكن لم يمكن التحقق من تفاصيل كافية لتأكيده." });
 
-  $("f-listing").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearOut(lForm); busy(lForm, true);
-    try {
-      const rev = $("lrev").value.trim();
-      const row = await (await post("/api/listing", { brand: $("lbrand").value, name: $("lname").value.trim(),
-        phone: $("lphone").value.trim(), address: $("laddr").value.trim(), website: $("lsite").value.trim(),
-        review_count: rev === "" ? null : Number(rev) })).json();
-      const [tone, word, sub] = LISTING[row.verdict] || LISTING.unverified;
-      const card = within(lForm, ".result");
-      const v = within(card, ".verdict"); v.className = "verdict v-" + tone;
-      within(v, ".word").textContent = word; within(v, ".sub").textContent = sub;
-      const body = within(card, ".body"); body.querySelector(".signals").replaceWith(signalsHTML(row));
-      body.querySelector(".reasons").replaceWith(reasonsList(row.reasons || []));
-      card.hidden = false; card.scrollIntoView({ behavior: "smooth", block: "start" });
-    } catch (err) { showError(lForm, unreachable(err)); }
-    finally { busy(lForm, false); }
+  if (!row.phone) out.push({ kind: "neutral", text: "لا يظهر رقم هاتف في الإعلان." });
+  else if (v("phone_in_official") === "true") out.push({ kind: "safe", text: `رقم الهاتف ${phone} هو رقم خدمة العملاء المنشور لـ${b}.` });
+  else out.push({ kind: "risk", text: `رقم الهاتف ${phone} ليس من الأرقام المنشورة لـ${b}` + (row.phone_verdict === "malicious" ? " (رقم هاتف متحرك شخصي)." : ".") });
+
+  if (v("address_in_branches") === "true") out.push({ kind: "safe", text: `العنوان يطابق الفرع الرسمي «${row.matched_branch}» لـ${b}.` });
+  else if (v("address_in_branches") === "false") out.push({ kind: "risk", text: `العنوان لا يطابق أي فرع في قائمة الفروع الرسمية لـ${b}.` });
+  else out.push({ kind: "neutral", text: `لا توجد قائمة فروع رسمية لـ${b} حتى الآن، لذا لم يفحص العنوان.` });
+
+  if (v("found_in_osm") === "true") out.push({ kind: "safe", text: `يظهر على OpenStreetMap موقع لـ${b} في هذا العنوان.` });
+  else if (v("found_in_osm") === "false") out.push({ kind: "risk", text: `يعرض OpenStreetMap مواقع لـ${b}، لكن ليس في هذا العنوان.` });
+  else out.push({ kind: "neutral", text: "لا يمكن لـOpenStreetMap تأكيد هذا الإعلان أو نفيه." });
+
+  if (row.web_mentions === "" || row.web_mentions == null) out.push({ kind: "neutral", text: "لم يفحص الحضور على الإنترنت (لا يوجد مفتاح بحث)." });
+  else if (Number(row.web_mentions) >= 2) out.push({ kind: "safe", text: `الاسم والرقم يظهران في ${row.web_mentions} مواقع أخرى.` });
+  else out.push({ kind: "risk", text: `الاسم والرقم لا يكادان يظهران في أي موقع آخر (${row.web_mentions})، وهذا مؤشر على إعلان مختلق.` });
+
+  let site = row.website || ""; try { if (site) site = new URL(/^https?:/i.test(site) ? site : "https://" + site).hostname; } catch (_) {}
+  if (v("website_official") === "true") out.push({ kind: "safe", text: `الموقع ${iso(site || "")} نطاق رسمي لـ${b}.` });
+  else if (v("website_official") === "false") out.push({ kind: "risk", text: `الموقع ${iso(site || "")} ليس نطاقا رسميا لـ${b}.` });
+  else out.push({ kind: "neutral", text: "لا يحتوي الإعلان على موقع إلكتروني." });
+
+  if (row.review_count !== "" && row.review_count != null && Number(row.review_count) < 5) {
+    const rc = Number(row.review_count);
+    out.push({ kind: "risk", text: rc === 0 ? "لا توجد تقييمات على الإعلان." : `عدد التقييمات على الإعلان ${rc} فقط.` });
+  }
+  return out;
+}
+
+const lForm = $("l-form"), lDemo = $("l-demo");
+let listingRow = null, demoRows = null;
+function renderListing(scroll) {
+  if (!listingRow) return;
+  const card = within(lForm, ".result"), row = listingRow;
+  const [word, sub] = t("v.lst." + (LTONE[row.verdict] ? row.verdict : "unverified"));
+  verdictBlock(card, LTONE[row.verdict] || "grey", word, sub);
+  within(card, ".signals").replaceWith(signalsBox(row));
+  fillReasons(within(card, ".reasons"), listingReasons(row));
+  card.hidden = false;
+  if (scroll) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function renderDemo() {
+  if (!demoRows) return;
+  const list = $("demo-list"), open = new Set([...list.querySelectorAll(".item.open")].map((el) => el.dataset.i));
+  list.innerHTML = "";
+  demoRows.forEach((row, i) => {
+    const vk = LTONE[row.verdict] ? row.verdict : "unverified";
+    const item = document.createElement("div"); item.className = "item" + (open.has(String(i)) ? " open" : ""); item.dataset.i = i;
+    const head = document.createElement("button"); head.type = "button"; head.setAttribute("aria-expanded", open.has(String(i)));
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = row.name;
+    if (row.synthetic === "true") { const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = t("badge"); nm.append(bd); }
+    const chip = document.createElement("span"); chip.className = "chip " + LTONE[vk]; chip.textContent = t("v.lst." + vk)[0];
+    const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = t("lst.meta", { p: iso(row.phone), n: row.disagreement_count });
+    head.append(nm, chip, meta);
+    const det = document.createElement("div"); det.className = "detail";
+    const ul = document.createElement("ul"); ul.className = "reasons"; fillReasons(ul, listingReasons(row));
+    det.append(signalsBox(row), ul);
+    head.addEventListener("click", () => { item.classList.toggle("open"); head.setAttribute("aria-expanded", item.classList.contains("open")); });
+    item.append(head, det); list.append(item);
   });
+}
+$("seg-form").addEventListener("click", () => { $("seg-form").classList.add("on"); $("seg-demo").classList.remove("on"); lForm.hidden = false; lDemo.hidden = true; });
+$("seg-demo").addEventListener("click", () => { $("seg-demo").classList.add("on"); $("seg-form").classList.remove("on"); lForm.hidden = true; lDemo.hidden = false; loadDemo(false); });
+$("f-listing").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  listingRow = null; clearOut(lForm); busy(lForm, true);
+  try {
+    const rev = $("lrev").value.trim();
+    listingRow = await (await post("/api/listing", { brand: $("lbrand").value, name: $("lname").value.trim(),
+      phone: $("lphone").value.trim(), address: $("laddr").value.trim(), website: $("lsite").value.trim(),
+      review_count: rev === "" ? null : Number(rev) })).json();
+    renderListing(true);
+  } catch (err) { showError(lForm, errText(err)); }
+  finally { busy(lForm, false); }
+});
+async function loadDemo(refresh) {
+  if (demoRows && !refresh) return;
+  within(lDemo, ".error").classList.remove("on"); within(lDemo, ".spinner").classList.add("on"); $("rescan").disabled = true;
+  try {
+    const r = await fetch(BASE + "/api/listings" + (refresh ? "?refresh=1" : ""));
+    if (!r.ok) { let d = ""; try { d = (await r.json()).detail || ""; } catch (_) {} throw new Error(d || t("err.http", { c: r.status })); }
+    demoRows = await r.json(); renderDemo();
+  } catch (err) { showError(lDemo, errText(err)); }
+  finally { within(lDemo, ".spinner").classList.remove("on"); $("rescan").disabled = false; }
+}
+$("rescan").addEventListener("click", () => loadDemo(true));
 
-  let demoLoaded = false;
-  async function loadDemo(refresh) {
-    if (demoLoaded && !refresh) return;
-    const list = $("demo-list"); within(lDemo, ".error").classList.remove("on");
-    within(lDemo, ".spinner").classList.add("on"); $("rescan").disabled = true;
-    if (refresh) list.innerHTML = "";
-    try {
-      const r = await fetch(BASE + "/api/listings" + (refresh ? "?refresh=1" : ""));
-      if (!r.ok) { let d = ""; try { d = (await r.json()).detail || ""; } catch (_) {} throw new Error(d || "HTTP " + r.status); }
-      const rows = await r.json(); list.innerHTML = "";
-      for (const row of rows) {
-        const [tone, word] = LISTING[row.verdict] || LISTING.unverified;
-        const item = document.createElement("div"); item.className = "item";
-        const head = document.createElement("button"); head.type = "button"; head.setAttribute("aria-expanded", "false");
-        const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = row.name;
-        if (row.synthetic === "true") { const b = document.createElement("span"); b.className = "badge"; b.textContent = "sample fake"; nm.append(b); }
-        const chip = document.createElement("span"); chip.className = "chip " + tone; chip.textContent = word;
-        const meta = document.createElement("span"); meta.className = "meta";
-        meta.textContent = row.phone + " · " + row.disagreement_count + " check" + (row.disagreement_count === "1" ? "" : "s") + " disagree";
-        head.append(nm, chip, meta);
-        const det = document.createElement("div"); det.className = "detail";
-        det.append(signalsHTML(row), reasonsList(row.reasons || []));
-        head.addEventListener("click", () => { item.classList.toggle("open"); head.setAttribute("aria-expanded", item.classList.contains("open")); });
-        item.append(head, det); list.append(item);
-      }
-      demoLoaded = true;
-    } catch (err) { showError(lDemo, unreachable(err)); }
-    finally { within(lDemo, ".spinner").classList.remove("on"); $("rescan").disabled = false; }
-  }
-  $("rescan").addEventListener("click", () => loadDemo(true));
-  if (location.hash === "#number") showTab("number");
-  if (location.hash === "#listing") showTab("listing");
+function renderAll() { renderLink(false); renderNumber(false); renderListing(false); renderDemo(); }
+
+// ---------- start
+(async () => {
+  try { const h = await (await fetch(BASE + "/api/health")).json(); health = h.checker_api ? "ok" : "noapi"; }
+  catch (_) { health = "down"; }
+  showBanner();
+  try {
+    const brands = await (await fetch(BASE + "/api/brands")).json();
+    for (const b of brands) BRANDS[b.brand] = { en: b.display_name, name: b.display_name };
+    document.querySelectorAll("select.brands").forEach((sel) => {
+      for (const b of brands) { const o = document.createElement("option"); o.value = b.brand; o.textContent = b.display_name; sel.append(o); }
+    });
+  } catch (_) {}
+})();
+applyLang();
+if (location.hash === "#number") showTab("number");
+if (location.hash === "#listing") showTab("listing");
 </script>
 </body>
 </html>

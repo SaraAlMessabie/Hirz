@@ -265,6 +265,8 @@ def scan_one(L, api, brands, branches, brave_key="", email=""):
 
     fmt = lambda v: "" if v is None else str(v).lower()
     return {"brand": brand, "name": L.get("name", ""), "phone": L.get("phone", ""),
+            "address": L.get("address", ""), "website": L.get("website", ""),
+            "review_count": "" if L.get("review_count") in (None, "") else L.get("review_count"),
             "phone_in_official": fmt(phone_ok), "address_in_branches": fmt(addr_ok),
             "found_in_osm": fmt(osm_ok), "web_mentions": "" if web_n is None else web_n,
             "disagreement_count": n, "verdict": verdict,
