@@ -648,7 +648,9 @@ async function buildEvidence(target, btn, msg){
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({url: target})});
     if (!r.ok){
-      msg.textContent = r.status === 503 ? d("evb.nomod") : d("evb.failed", { c: r.status });
+      let detail = ""; try { detail = (await r.json()).detail || ""; } catch (_) {}
+      msg.textContent = r.status === 503 ? d("evb.nomod")
+        : (detail || d("evb.failed", { c: r.status }));
       return;
     }
     const id   = r.headers.get("X-Evidence-Id") || "report";

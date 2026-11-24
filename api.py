@@ -518,8 +518,12 @@ def evidence_report(body: UrlIn):
     if not HAVE_EVIDENCE:
         raise HTTPException(503, "evidence module not available")
     result = check(UrlIn(url=body.url, deep=True))
-    bundle = evidence_mod.build(result)
-    _, pdf_path = evidence_mod.save(bundle)
+    try:
+        bundle = evidence_mod.build(result)
+        _, pdf_path = evidence_mod.save(bundle)
+    except Exception as e:
+        raise HTTPException(502, f"Could not build the evidence report: "
+                                 f"{type(e).__name__}: {e}")
     data = pathlib.Path(pdf_path).read_bytes()
     eid = bundle["evidence_id"]
     return Response(data, media_type="application/pdf", headers={

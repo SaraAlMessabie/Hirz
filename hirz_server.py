@@ -149,8 +149,15 @@ def listings(refresh: int = 0):
 @app.post("/api/evidence")
 def make_evidence(body: UrlIn):
     """Runs /check itself rather than trusting a result sent by the browser."""
-    b = evidence.build(_proxy("/check", {"url": body.url, "deep": True}))
-    _, pdf_path = evidence.save(b)
+    checked = _proxy("/check", {"url": body.url, "deep": True})
+    try:
+        b = evidence.build(checked)
+        _, pdf_path = evidence.save(b)
+    except Exception as e:
+        # A bare 500 told the user nothing and left the reason in a log they
+        # cannot see. The client shows this detail.
+        raise HTTPException(502, f"Could not build the evidence report: "
+                                 f"{type(e).__name__}: {e}")
     data = pathlib.Path(pdf_path).read_bytes()
     eid = b["evidence_id"]
     return Response(data, media_type="application/pdf", headers={
