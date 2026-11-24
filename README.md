@@ -292,5 +292,10 @@ the app and in every PDF.
 
 ## Team
 
-**Team name:** _add before submitting_
-**Members:** _add before submitting_
+**Team name:** The Scammers
+
+- Sara Al Messabi
+- Shooq Alaboolan
+- Ahmed Alkaff
+- Meera Alshokri
+- Afnan Balfagieh
