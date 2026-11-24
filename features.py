@@ -12,7 +12,14 @@ CHEAP_TLDS = {"xyz","top","click","cfd","icu","rest","buzz","sbs","shop",
 FREE_HOSTS = ("pages.dev","web.app","firebaseapp.com","workers.dev","netlify.app",
               "github.io","vercel.app","r2.dev","glitch.me","repl.co","000webhostapp.com")
 KEYWORDS   = {"secure","login","verify","account","update","confirm","signin",
-              "wallet","payment","customs","delivery","tracking","parcel","refund"}
+              "wallet","payment","customs","delivery","tracking","parcel","refund",
+              "clearance","redelivery","suspended","unlock","reactivate",
+              # Arabic transliterations used in UAE-targeted campaigns
+              "tahaqoq","hisab","dafa","tawsil","jumruk","khidma","tasjeel"}
+
+# Arabic urgency / account vocabulary, matched against page text not the domain
+ARABIC_KEYWORDS = {"تحقق", "عاجل", "تعليق", "الحساب", "تأكيد", "تحديث",
+                   "الجمارك", "شحنة", "توصيل", "دفع", "رسوم", "بطاقة"}
 BRANDS     = {"adcb","emiratesnbd","enbd","fab","mashreq","rakbank","adib","dib",
               "uaepass","tamm","aramex","dhl","fedex","emiratespost","etisalat","du",
               "dewa","noon","talabat","careem","amazon","paypal","apple","microsoft"}
@@ -34,6 +41,20 @@ def age_bucket(days):
     for i, lim in enumerate([7, 30, 90, 365, 1095]):
         if days < lim: return i
     return 5
+
+def mixed_script(label):
+    """A single label mixing Arabic/Latin/Cyrillic is never legitimate."""
+    import unicodedata
+    scripts = set()
+    for c in label:
+        if not c.isalpha():
+            continue
+        name = unicodedata.name(c, "")
+        for s in ("ARABIC", "LATIN", "CYRILLIC", "GREEK", "HEBREW"):
+            if name.startswith(s):
+                scripts.add(s)
+    return len(scripts) > 1
+
 
 def string_feats(host):
     host = host.lower().strip(".")
@@ -57,6 +78,7 @@ def string_feats(host):
         "_rule_brand_misplaced": int(bool(BRANDS & set(stok)) and not (BRANDS & set(dtok))),
         "_rule_kw_in_sub":       int(bool(KEYWORDS & set(stok))),
         "_rule_deep_sub":        int(len([l for l in sub.split(".") if l]) >= 3),
+        "_rule_mixed_script":    int(any(mixed_script(l) for l in host.split("."))),
     }
 
 if __name__ == "__main__":
