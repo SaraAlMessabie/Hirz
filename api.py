@@ -4,7 +4,7 @@ Scam detection API.
   POST /check-number   {"number": "+971...", "brand_context": "ADCB"}
   GET  /stats  /detections  /campaigns  /blocklist
 """
-import csv, json, pathlib, time
+import csv, json, pathlib, re, time, uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -286,6 +286,8 @@ def root():
             "endpoints": ["POST /check", "POST /check-number", "GET /stats",
                           "GET /detections", "GET /campaigns", "GET /confirmed",
                           "GET/POST /official", "POST /evidence",
+                          "POST /report", "GET /reports",
+                          "POST /scan-message",
                           "POST /review", "GET /reviews"],
             "docs": "/docs", "features": len(FEATS),
             "confirmed": len(CONFIRMED), "reported": len(REPORTED),
@@ -447,6 +449,230 @@ def evidence_fetch(evidence_id: str):
         raise HTTPException(404, "no such evidence report")
     return FileResponse(p, media_type="application/pdf",
                         filename=f"hirz-evidence-{safe}.pdf")
+
+
+# ------------------------------------------------- citizen reporting
+REPORTS_FILE = pathlib.Path("data/reports.csv")
+REPORT_FIELDS = ["report_id", "type", "description", "url", "phone", "email",
+                 "reporter", "status", "created_at", "auto_verdict", "auto_score"]
+
+
+class ReportIn(BaseModel):
+    type: str = "other"          # phone | email | sms | website | other
+    description: str = ""
+    url: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    reporter: str = "anonymous"
+
+
+@app.post("/report")
+def submit_report(body: ReportIn):
+    """A citizen reports a scam. Goes to the investigator queue as pending.
+    If a URL or number was given we run our own check and attach the verdict,
+    so the reviewer opens the case with evidence already on it."""
+    if not any([body.url, body.phone, body.email, body.description.strip()]):
+        raise HTTPException(400, "give at least a URL, a number, an email or a description")
+
+    auto_verdict, auto_score = "", ""
+    try:
+        if body.url:
+            v = check(UrlIn(url=body.url, deep=True))
+            auto_verdict, auto_score = v.get("status", ""), v.get("score", "")
+        elif body.phone:
+            v = check_number(NumIn(number=body.phone))
+            auto_verdict, auto_score = v.get("verdict", ""), v.get("score", "")
+    except Exception:
+        pass
+
+    rid = "R-" + uuid.uuid4().hex[:8].upper()
+    row = {"report_id": rid, "type": body.type,
+           "description": body.description[:2000],
+           "url": body.url or "", "phone": body.phone or "",
+           "email": body.email or "", "reporter": body.reporter,
+           "status": "pending", "created_at": now(),
+           "auto_verdict": auto_verdict, "auto_score": auto_score}
+
+    fresh = not REPORTS_FILE.exists()
+    with REPORTS_FILE.open("a", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=REPORT_FIELDS)
+        if fresh:
+            w.writeheader()
+        w.writerow(row)
+
+    return {"ok": True, "report_id": rid, "status": "pending",
+            "auto_verdict": auto_verdict, "auto_score": auto_score,
+            "message": "Report received. An investigator will review it.",
+            "created_at": row["created_at"]}
+
+
+@app.get("/reports")
+def list_reports(status: str = None, reporter: str = None, limit: int = 100):
+    """The investigator queue, or one citizen's own reports."""
+    rows = _rows("data/reports.csv")
+    if status:
+        rows = [r for r in rows if r.get("status") == status]
+    if reporter:
+        rows = [r for r in rows if r.get("reporter") == reporter]
+    rows.reverse()
+    counts = {}
+    for r in _rows("data/reports.csv"):
+        counts[r.get("status", "?")] = counts.get(r.get("status", "?"), 0) + 1
+    return {"total": len(rows), "counts": counts, "items": rows[:limit]}
+
+
+class ReportStatusIn(BaseModel):
+    report_id: str
+    status: str                   # under_review | confirmed | rejected
+    reviewer: str = "investigator"
+    note: str = ""
+
+
+@app.post("/report-status")
+def set_report_status(body: ReportStatusIn):
+    """Investigator moves a report through the queue. Confirming a report
+    also confirms the identifiers on it."""
+    allowed = ("pending", "under_review", "confirmed", "rejected")
+    if body.status not in allowed:
+        raise HTTPException(400, f"status must be one of {allowed}")
+
+    rows = _rows("data/reports.csv")
+    found = False
+    for r in rows:
+        if r.get("report_id") == body.report_id:
+            r["status"] = body.status
+            found = True
+    if not found:
+        raise HTTPException(404, "no such report")
+
+    with REPORTS_FILE.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=REPORT_FIELDS)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in REPORT_FIELDS})
+
+    promoted = []
+    if body.status == "confirmed":
+        for r in rows:
+            if r.get("report_id") != body.report_id:
+                continue
+            if r.get("url"):
+                host = (urlparse(r["url"]).hostname if "://" in r["url"]
+                        else r["url"].split("/")[0]) or r["url"]
+                d = reg_of(host.lower().strip("."))
+                record_review(d, "confirm", body.reviewer,
+                              f"via report {body.report_id}")
+                promoted.append(d)
+        CHECK_CACHE.clear()
+
+    return {"ok": True, "report_id": body.report_id, "status": body.status,
+            "promoted_to_confirmed": promoted}
+
+
+# ------------------------------------------------- message scanning
+URL_RE   = re.compile(r"\b(?:https?://|www\.)[^\s<>\"']{4,}", re.I)
+PHONE_RE = re.compile(
+    r"(?:\+971|00971|0)[\s-]?5\d[\s-]?\d{3}[\s-]?\d{4}"      # mobile
+    r"|(?:\+971|00971|0)[\s-]?[2-4679][\s-]?\d{3}[\s-]?\d{4}"  # landline
+    r"|\b[68]00[\s-]?\d{2,4}(?:[\s-]?\d{2,4})?\b")             # 600/800
+EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
+
+URGENCY = {"urgent", "immediately", "suspended", "verify", "expire", "expired",
+           "final notice", "within 24 hours", "act now", "blocked", "penalty",
+           "customs", "clearance", "unpaid", "reactivate", "confirm now"}
+ARABIC_URGENCY = {"عاجل", "تحقق", "تعليق", "الحساب", "تأكيد", "الجمارك", "رسوم"}
+
+
+class MessageIn(BaseModel):
+    text: str
+    lang: str | None = None
+
+
+@app.post("/scan-message")
+def scan_message(body: MessageIn):
+    """Paste an SMS or email. Pulls out the links, numbers and addresses,
+    checks each one, and reports the language and pressure tactics."""
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(400, "no text given")
+
+    urls   = list(dict.fromkeys(URL_RE.findall(text)))[:5]
+    phones = list(dict.fromkeys(m.strip() for m in PHONE_RE.findall(text)))[:5]
+    emails = list(dict.fromkeys(EMAIL_RE.findall(text)))[:5]
+
+    low = text.lower()
+    hits = sorted({k for k in URGENCY if k in low} |
+                  {k for k in ARABIC_URGENCY if k in text})
+    has_arabic = any("\u0600" <= c <= "\u06ff" for c in text)
+
+    url_results, worst, worst_status = [], 0, "NO_MATCH"
+    for u in urls:
+        try:
+            v = check(UrlIn(url=u if "://" in u else "https://" + u, deep=True))
+        except Exception:
+            continue
+        url_results.append({"url": u, "status": v.get("status"),
+                            "score": v.get("score"),
+                            "reasons": [x["text"] for x in (v.get("reasons") or [])[:3]]})
+        if (v.get("score") or 0) > worst:
+            worst, worst_status = v["score"], v.get("status", worst_status)
+
+    phone_results = []
+    for p in phones:
+        try:
+            v = check_number(NumIn(number=p))
+        except Exception:
+            continue
+        phone_results.append({"number": p, "verdict": v.get("verdict"),
+                              "score": v.get("score"),
+                              "reasons": [x["text"] for x in (v.get("reasons") or [])[:2]]})
+        if (v.get("score") or 0) > worst:
+            worst = v["score"]
+
+    indicators = []
+    if hits:
+        indicators.append({"type": "urgency",
+                           "description": "Pressure language: " + ", ".join(hits[:5])})
+    if urls and not url_results:
+        indicators.append({"type": "unreachable",
+                           "description": "The links in this message could not be reached"})
+    for r in url_results:
+        if r["status"] in ("CONFIRMED", "REPORTED"):
+            indicators.append({"type": "known_bad",
+                               "description": f"{r['url']} is already flagged"})
+    for r in phone_results:
+        if r["verdict"] in ("malicious", "suspicious"):
+            indicators.append({"type": "suspicious_number",
+                               "description": f"{r['number']}: " +
+                                              (r["reasons"][0] if r["reasons"] else "unusual for a helpline")})
+
+    if worst >= 80 or worst_status == "CONFIRMED":
+        risk = "high"
+    elif worst >= 30 or len(hits) >= 2:
+        risk = "medium"
+    elif urls or phones:
+        risk = "low"
+    else:
+        risk = "unknown"
+
+    recs = ["Do not click the links in this message.",
+            "Contact the organisation using a number from their official website, "
+            "not one in the message."]
+    if phone_results:
+        recs.append("Do not call back the number in this message.")
+    if risk == "unknown":
+        recs = ["We found nothing to check in this message. "
+                "That does not mean it is safe."]
+
+    return {"risk_level": risk,
+            "language": "ar" if has_arabic else "en",
+            "summary": (f"{len(urls)} link(s), {len(phones)} number(s), "
+                        f"{len(emails)} address(es) found"),
+            "indicators": indicators,
+            "urls": url_results, "phone_numbers": phone_results,
+            "email_addresses": emails,
+            "recommendations": recs,
+            "advisory": ADVISORY, "checked_at": now()}
 
 
 @app.get("/reviews")
