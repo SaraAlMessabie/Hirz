@@ -576,6 +576,14 @@ def _render_page(pdf, b, lang, page_no, pages=2):
     pdf.cell(W / 2, 4, visual(f"حرز  ·  {page_no}/{pages}"), align="R")
 
 
+def save(b: dict):
+    """Write evidence/<id>.json and evidence/<id>.pdf; returns both paths."""
+    OUT.mkdir(exist_ok=True)
+    jpath = OUT / f"{b['evidence_id']}.json"
+    jpath.write_text(json.dumps(b, indent=2, ensure_ascii=False), "utf-8")
+    return jpath, render_pdf(b, OUT / f"{b['evidence_id']}.pdf")
+
+
 # ---------------------------------------------------------------- CLI
 def main():
     ap = argparse.ArgumentParser(description="Build a police-ready evidence package for a URL.")
@@ -599,10 +607,7 @@ def main():
         sys.exit(f"Could not reach the API at {a.api} ({type(e).__name__}). Start it with: uvicorn api:app --port 8000")
 
     b = build(resp.json())
-    OUT.mkdir(exist_ok=True)
-    jpath = OUT / f"{b['evidence_id']}.json"
-    jpath.write_text(json.dumps(b, indent=2, ensure_ascii=False), "utf-8")
-    ppath = render_pdf(b, OUT / f"{b['evidence_id']}.pdf")
+    jpath, ppath = save(b)
     reg = b["takedown"][0]
     print(f"{b['verdict'].upper()} ({b['score']}/100)  {b['url']}")
     print(f"  JSON  {jpath}\n  PDF   {ppath}  (page 1 English, page 2 Arabic)")

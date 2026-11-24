@@ -3,50 +3,68 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1629">
 <title>Hirz — Check a link</title>
 <style>
   :root {
-    --bg: #0b1220;
-    --card: #131c2e;
-    --line: #22304a;
+    --bg: #0b1629;
+    --bg2: #0e2340;
+    --card: #12233b;
+    --line: #1f3656;
     --text: #e8eef9;
-    --muted: #93a3bd;
-    --accent: #3b82f6;
-    --red: #ef4444;   --red-bg: #2a1215;
+    --muted: #93a8c4;
+    --cyan: #38bdf8;
+    --red: #e63946;   --red-bg: #2b1219;
     --amber: #f59e0b; --amber-bg: #2a2010;
     --green: #22c55e; --green-bg: #0f2418;
-    --grey: #94a3b8;  --grey-bg: #1a2233;
+    --grey: #94a3b8;  --grey-bg: #18243a;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--text);
-    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .phone { max-width: 390px; margin: 0 auto; min-height: 100vh; padding: 20px 18px 40px; }
-  header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-  header svg { flex: none; }
-  header h1 { font-size: 20px; margin: 0; letter-spacing: .2px; }
-  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  html, body { margin: 0; color: var(--text);
+    background: radial-gradient(120% 60% at 50% 0%, var(--bg2) 0%, var(--bg) 60%) fixed, var(--bg);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif; }
+  .phone { max-width: 390px; margin: 0 auto; min-height: 100vh; padding: 0 0 36px; }
+
+  /* hero: network band + logo, like the Hirz slide */
+  .hero { position: relative; height: 188px; overflow: hidden;
+    background: #0b1629 url("img/header_bg.jpg") center bottom / cover no-repeat; }
+  .hero img { position: absolute; left: 50%; top: 10px; height: 150px; transform: translateX(-50%);
+    filter: drop-shadow(0 0 18px rgba(56,189,248,.25)); }
+  .hero .tag { position: absolute; bottom: 12px; width: 100%; text-align: center; font-size: 13px;
+    letter-spacing: .3px; color: #cfe3f7; }
+  .marks { position: absolute; top: 14px; display: flex; gap: 3px; }
+  .marks i { width: 4px; height: 10px; background: #e2e8f0; transform: skewX(-30deg); border-radius: 1px; }
+  .marks.l { left: 14px; } .marks.r { right: 14px; }
+  .flag { display: flex; height: 4px; }
+  .flag i { flex: 1; } .flag i:nth-child(1){background:#00732f} .flag i:nth-child(2){background:#fff}
+  .flag i:nth-child(3){background:#000} .flag i:nth-child(4){background:#ce1126}
+
+  main { padding: 18px 18px 0; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  h1 span { color: var(--muted); font-weight: 500; font-size: 16px; }
+  .lead { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
 
   form { display: flex; flex-direction: column; gap: 10px; }
-  label { font-size: 14px; color: var(--muted); }
   input[type=text] {
     width: 100%; padding: 14px; font-size: 16px; color: var(--text);
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px; outline: none;
+    background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; outline: none;
   }
-  input[type=text]:focus { border-color: var(--accent); }
+  input[type=text]:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56,189,248,.18); }
   button {
     font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 14px;
-    cursor: pointer; color: #fff; background: var(--accent);
+    cursor: pointer; color: #04121f; background: linear-gradient(180deg, #5ccdfb, #22a6e0);
   }
   button:disabled { opacity: .6; cursor: wait; }
   .ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .danger { background: var(--red); color: #fff; }
 
-  .spinner { display: none; align-items: center; gap: 10px; color: var(--muted); margin-top: 18px; }
+  .spinner { display: none; align-items: center; gap: 10px; color: var(--muted); margin-top: 16px; font-size: 14px; }
   .spinner.on { display: flex; }
-  .spinner i { width: 18px; height: 18px; border-radius: 50%;
-    border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+  .spinner i { flex: none; width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--line); border-top-color: var(--cyan); animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .result { display: none; margin-top: 20px; border-radius: 16px; overflow: hidden;
+  .result { display: none; margin-top: 18px; border-radius: 16px; overflow: hidden;
     border: 1px solid var(--line); background: var(--card); }
   .result.on { display: block; }
   .verdict { padding: 22px 18px 18px; text-align: center; }
@@ -55,7 +73,6 @@
   .verdict .score { margin-top: 12px; font-size: 14px; color: var(--muted); }
   .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); margin: 8px auto 0; max-width: 240px; overflow: hidden; }
   .bar b { display: block; height: 100%; width: 0; transition: width .6s ease; }
-
   .v-malicious  { background: var(--red-bg); }   .v-malicious  .word, .v-malicious  .sub { color: var(--red); }   .v-malicious  .bar b { background: var(--red); }
   .v-suspicious { background: var(--amber-bg); } .v-suspicious .word, .v-suspicious .sub { color: var(--amber); } .v-suspicious .bar b { background: var(--amber); }
   .v-clean      { background: var(--green-bg); } .v-clean      .word, .v-clean      .sub { color: var(--green); } .v-clean      .bar b { background: var(--green); }
@@ -64,7 +81,7 @@
   .body { padding: 16px 18px 18px; }
   .host { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; margin-bottom: 12px; }
   .host b { color: var(--text); font-weight: 600; }
-  h2 { font-size: 15px; margin: 0 0 8px; }
+  h2 { font-size: 15px; margin: 0 0 8px; padding-left: 9px; border-left: 3px solid var(--cyan); }
   ul.reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   ul.reasons li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;
     background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; font-size: 15px; }
@@ -75,91 +92,105 @@
   .empty { color: var(--muted); font-size: 14px; }
   .note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
 
-  .proceed { margin-top: 16px; display: none; flex-direction: column; gap: 8px; }
-  .proceed.on { display: flex; }
+  .actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .evidence, .proceed { display: none; flex-direction: column; gap: 8px; }
+  .evidence.on, .proceed.on { display: flex; }
+  .evidence button { background: linear-gradient(180deg, #1d4f7a, #163d61); color: #e8f4ff; border: 1px solid #2b6496; }
+  .evidence .msg { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .evidence .msg.err { color: #fca5a5; }
   .proceed .warn { display: none; font-size: 14px; color: var(--red); background: var(--red-bg);
     border: 1px solid #5b1d22; border-radius: 10px; padding: 10px 12px; }
   .proceed .warn.on { display: block; }
-  .danger { background: var(--red); }
 
-  .error { display: none; margin-top: 18px; padding: 12px 14px; border-radius: 12px;
+  .error { display: none; margin-top: 16px; padding: 12px 14px; border-radius: 12px;
     background: var(--grey-bg); border: 1px solid var(--line); color: var(--text); font-size: 14px; }
   .error.on { display: block; }
-  footer { margin-top: 24px; font-size: 12px; color: var(--muted); text-align: center; }
+  footer { margin-top: 24px; padding: 0 18px; font-size: 12px; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
-<main class="phone">
-  <header>
-    <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true">
-      <path d="M16 2 4 7v8c0 7.3 5.1 13.4 12 15 6.9-1.6 12-7.7 12-15V7L16 2z" fill="#3b82f6"/>
-      <path d="m11 16 3.5 3.5L21.5 12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div>
-      <h1>Hirz — Check a link</h1>
-      <p>Paste a link from an SMS, email or chat</p>
-    </div>
+<div class="phone">
+  <header class="hero">
+    <div class="marks l"><i></i><i></i><i></i><i></i></div>
+    <div class="marks r"><i></i><i></i><i></i><i></i></div>
+    <img src="img/hirz_logo.png" alt="Hirz">
+    <div class="tag">Your safeguard against scams · حمايتك من الاحتيال</div>
   </header>
+  <div class="flag"><i></i><i></i><i></i><i></i></div>
 
-  <form id="f" autocomplete="off">
-    <label for="url">Link to check</label>
-    <input id="url" type="text" inputmode="url" placeholder="https://example.com/login" required>
-    <button id="go" type="submit">Check link</button>
-  </form>
+  <main>
+    <h1>Check a link <span>· تحقق من رابط</span></h1>
+    <p class="lead">Paste a link from an SMS, email or chat.</p>
 
-  <div id="spin" class="spinner" role="status" aria-live="polite"><i></i><span>Checking the link — this can take a few seconds…</span></div>
-  <div id="err" class="error" role="alert"></div>
+    <form id="f" autocomplete="off">
+      <input id="url" type="text" inputmode="url" placeholder="https://example.com/login" aria-label="Link to check" required>
+      <button id="go" type="submit">Check link</button>
+    </form>
 
-  <section id="res" class="result" aria-live="polite">
-    <div id="verdict" class="verdict">
-      <div id="word" class="word"></div>
-      <div id="sub" class="sub"></div>
-      <div id="score" class="score"></div>
-      <div class="bar"><b id="bar"></b></div>
-    </div>
-    <div class="body">
-      <div id="host" class="host"></div>
-      <h2>Why</h2>
-      <ul id="reasons" class="reasons"></ul>
+    <div id="spin" class="spinner" role="status" aria-live="polite"><i></i><span>Checking the link — this can take a few seconds…</span></div>
+    <div id="err" class="error" role="alert"></div>
 
-      <div id="proceed" class="proceed">
-        <button id="proceedBtn" type="button" class="ghost">Proceed anyway</button>
-        <div id="warn" class="warn">
-          This link shows strong signs of a scam. Never enter a password, card number or OTP on it.
-          <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%">I understand — open the link</button></div>
-        </div>
+    <section id="res" class="result" aria-live="polite">
+      <div id="verdict" class="verdict">
+        <div id="word" class="word"></div>
+        <div id="sub" class="sub"></div>
+        <div id="score" class="score"></div>
+        <div class="bar"><b id="bar"></b></div>
       </div>
+      <div class="body">
+        <div id="host" class="host"></div>
+        <h2>Why</h2>
+        <ul id="reasons" class="reasons"></ul>
 
-      <div class="note">Risk assessments are advisory and are not proof of fraud.</div>
-      <button id="again" type="button" class="ghost" style="width:100%;margin-top:14px">Check another link</button>
-    </div>
-  </section>
+        <div class="actions">
+          <div id="evidence" class="evidence">
+            <button id="evBtn" type="button">Download evidence report (PDF)</button>
+            <div id="evMsg" class="msg"></div>
+          </div>
+          <div id="proceed" class="proceed">
+            <button id="proceedBtn" type="button" class="ghost">Proceed anyway</button>
+            <div id="warn" class="warn">
+              This link shows strong signs of a scam. Never enter a password, card number or OTP on it.
+              <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%">I understand — open the link</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">Risk assessments are advisory and are not proof of fraud.</div>
+        <button id="again" type="button" class="ghost" style="width:100%;margin-top:14px">Check another link</button>
+      </div>
+    </section>
+  </main>
 
   <footer id="api"></footer>
-</main>
+</div>
 
 <script>
-  // API address: defaults to the laptop running uvicorn. For a phone on the same
-  // Wi-Fi, open this page with ?api=http://<laptop-ip>:8000
-  const API = (new URLSearchParams(location.search).get("api") || "http://127.0.0.1:8000").replace(/\/$/, "");
-  document.getElementById("api").textContent = "Talking to " + API;
+  // API addresses: default to the laptop running uvicorn. For a phone on the same Wi-Fi:
+  //   check.html?api=http://<laptop-ip>:8000&evidence=http://<laptop-ip>:8001
+  const qs = new URLSearchParams(location.search);
+  const API = (qs.get("api") || "http://127.0.0.1:8000").replace(/\/$/, "");
+  const EVIDENCE = (qs.get("evidence") || API.replace(/:8000$/, ":8001")).replace(/\/$/, "");
+  document.getElementById("api").textContent = "Checker " + API + " · Reports " + EVIDENCE;
 
   const LABEL = {
-    malicious:  { word: "DANGER",     sub: "This link looks like a scam. Don't open it." },
-    suspicious: { word: "CAREFUL",    sub: "Some warning signs. Check with the sender another way." },
+    malicious:  { word: "DANGER",      sub: "This link looks like a scam. Don't open it." },
+    suspicious: { word: "CAREFUL",     sub: "Some warning signs. Check with the sender another way." },
     clean:      { word: "NO WARNINGS", sub: "No warning signs found. This does not guarantee safety." },
-    unknown:    { word: "UNKNOWN",    sub: "We couldn't assess this link." },
+    unknown:    { word: "UNKNOWN",     sub: "We couldn't assess this link." },
   };
+  const EV_HINT = "English and Arabic, ready to send to the police.";
 
   const $ = (id) => document.getElementById(id);
   let lastUrl = "";
 
   function reset() {
-    $("res").classList.remove("on");
-    $("err").classList.remove("on");
-    $("proceed").classList.remove("on");
-    $("warn").classList.remove("on");
+    ["res", "err", "proceed", "warn", "evidence"].forEach((id) => $(id).classList.remove("on"));
     $("bar").style.width = "0";
+    $("evMsg").className = "msg";
+    $("evMsg").textContent = EV_HINT;
+    $("evBtn").disabled = false;
+    $("evBtn").textContent = "Download evidence report (PDF)";
   }
 
   function render(data) {
@@ -171,8 +202,7 @@
     $("score").textContent = score === null ? "" : "Risk score " + score + " / 100";
     requestAnimationFrame(() => { $("bar").style.width = (score || 0) + "%"; });
 
-    const host = data.host || "";
-    const reg = data.reg_domain || "";
+    const host = data.host || "", reg = data.reg_domain || "";
     $("host").innerHTML = "";
     if (host) {
       const b = document.createElement("b"); b.textContent = reg || host;
@@ -196,6 +226,7 @@
       li.append(dot, txt); ul.append(li);
     }
 
+    if (v === "malicious" || v === "suspicious") $("evidence").classList.add("on");
     if (v === "malicious") $("proceed").classList.add("on");
     $("res").classList.add("on");
     $("res").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -211,8 +242,7 @@
     $("spin").classList.add("on");
     try {
       const r = await fetch(API + "/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, deep: true }),
       });
       if (!r.ok) throw new Error("The checker returned an error (HTTP " + r.status + ").");
@@ -228,12 +258,46 @@
     }
   });
 
+  $("evBtn").addEventListener("click", async () => {
+    const btn = $("evBtn"), msg = $("evMsg");
+    btn.disabled = true;
+    btn.textContent = "Building report…";
+    msg.className = "msg";
+    msg.textContent = "Collecting registration, certificate and hosting details — about 10–30 seconds.";
+    try {
+      const r = await fetch(EVIDENCE + "/evidence", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: lastUrl }),
+      });
+      if (!r.ok) throw new Error("The report service returned an error (HTTP " + r.status + ").");
+      const blob = await r.blob();
+      const id = r.headers.get("X-Evidence-Id") || "report";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "hirz-evidence-" + id + ".pdf";
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      btn.textContent = "Downloaded ✓  (download again)";
+      const h = r.headers.get("X-Bundle-SHA256") || "";
+      msg.textContent = "Saved as " + a.download + (h ? ". Integrity hash " + h.slice(0, 16) + "…" : ".");
+    } catch (err) {
+      btn.textContent = "Download evidence report (PDF)";
+      msg.className = "msg err";
+      msg.textContent = (err instanceof TypeError)
+        ? "Report service not reachable at " + EVIDENCE + ". Start it with: python -m uvicorn evidence_server:app --port 8001"
+        : err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   $("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
   $("openBtn").addEventListener("click", () => {
     const target = /^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl;
     window.open(target, "_blank", "noopener,noreferrer");
   });
   $("again").addEventListener("click", () => { reset(); $("url").value = ""; $("url").focus(); });
+  reset();
 </script>
 </body>
 </html>
