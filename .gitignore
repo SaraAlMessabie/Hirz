@@ -11,3 +11,8 @@ data/*.json
 # except the brand page fingerprints: tier2 needs them to compare a page
 # against the real brand's, and without the file that check silently does nothing
 !data/references.json
+
+# tools and local backups, not part of the project
+cloudflared.exe
+*.exe
+_mine/
