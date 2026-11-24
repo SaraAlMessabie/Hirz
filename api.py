@@ -11,6 +11,8 @@ from urllib.parse import urlparse
 import joblib, pandas as pd, phonenumbers
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from phonenumbers import PhoneNumberType as T
 
@@ -258,7 +260,21 @@ class NumIn(BaseModel):
     brand_context: str | None = None
 
 
-@app.get("/")
+CLIENTS = pathlib.Path("clients")
+if CLIENTS.is_dir():
+    app.mount("/app", StaticFiles(directory="clients", html=True), name="clients")
+
+
+@app.get("/dashboard")
+def dashboard():
+    """The investigator console."""
+    f = CLIENTS / "dashboard.html"
+    if f.exists():
+        return FileResponse(f)
+    return {"error": "clients/dashboard.html not found - are you on the full-system branch?"}
+
+
+@app.get("/api")
 def root():
     return {"service": "scam-detect", "status": "ok",
             "endpoints": ["POST /check", "POST /check-number", "GET /stats",
@@ -270,6 +286,14 @@ def root():
             "official": len(OFFICIAL_DOMAINS), "cached": len(CHECK_CACHE),
             "official_numbers": len(OFFICIAL),
             "thresholds": {"escalate": ESCALATE, "block": BLOCK}}
+
+
+@app.get("/")
+def home():
+    """Send a browser to the console, not to JSON."""
+    if (CLIENTS / "dashboard.html").exists():
+        return RedirectResponse("/dashboard")
+    return RedirectResponse("/docs")
 
 
 @app.get("/stats")

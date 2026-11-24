@@ -110,7 +110,9 @@
 </main>
 
 <script>
-const API = "http://127.0.0.1:8000";
+// same-origin when served from the API, falls back for file:// use
+const API = location.protocol.startsWith("http")
+  ? location.origin : "http://127.0.0.1:8000";
 let rows = [], current = null;
 
 async function loadStats(){
