@@ -118,9 +118,34 @@ const API = location.protocol.startsWith("http")
   ? location.origin : "http://127.0.0.1:8000";
 let rows = [], current = null;
 
+function banner(msg){
+  const b = document.getElementById("banner");
+  if (!b) return;
+  if (!msg){ b.style.display = "none"; return; }
+  b.style.display = "block"; b.innerHTML = msg;
+}
+
+async function getJSON(path){
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(path.split("?")[0] + " returned " + r.status);
+  const j = await r.json();
+  if (j && j.detail === "Not Found")
+    throw new Error(path.split("?")[0] + " does not exist on this server");
+  return j;
+}
+
 async function loadStats(){
-  const s = await (await fetch(API + "/stats")).json();
-  const r = await (await fetch(API + "/")).json();
+  let s, r;
+  try{
+    s = await getJSON("/stats");
+    r = await getJSON("/api");          // "/" now serves the console, not JSON
+  }catch(e){
+    banner("<b>The API is not serving the current build.</b> " + e.message +
+           "<br>Stop uvicorn, <code>git pull</code>, then "
+           + "<code>uvicorn api:app --reload --port 8000</code>");
+    return;
+  }
+  banner("");
   document.getElementById("stats").innerHTML = `
     <div class="stat hero"><div class="n">${s.unknown_to_public_feeds}</div>
       <div class="l">Unknown to every public feed</div></div>
