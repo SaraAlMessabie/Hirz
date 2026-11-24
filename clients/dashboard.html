@@ -64,6 +64,9 @@
   .takedown a{display:block;padding:6px 0;color:var(--blue);text-decoration:none;font-size:13px}
   .muted{color:var(--dim);padding:18px 15px;font-size:13px}
   td.link{color:var(--blue);text-decoration:underline;text-underline-offset:2px}
+  button.pdf{background:var(--blue);border-color:var(--blue);color:#fff;margin-inline-end:6px}
+  button.pdf:disabled{opacity:.65}
+  #repmsg{padding-inline:15px}
   .advisory{color:var(--dim);font-size:11.5px;padding:10px 15px 0;font-style:italic}
   /* Arabic: the layout mirrors, but domains, scores and hashes stay left-to-right */
   html[dir=rtl] body{font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif}
@@ -149,6 +152,7 @@ const API = (new URLSearchParams(location.search).get("api") || (
   : location.port === "8001" ? location.protocol + "//" + location.hostname + ":8000"
   : location.origin)).replace(/\/$/, "");
 const D = { en: {
+ "rep.pdf": "Evidence PDF",
  "case.hint": "— click a detection or a report to analyse it",
  "case.nourl": "That report has no web address to analyse. Reports naming a phone number or an email have no evidence bundle: the bundle is registration, certificate and hosting for one website.",
  "rep.t.website": "Fake website or link",
@@ -270,6 +274,7 @@ const D = { en: {
  "age5": "3+ years"
 },
   ar: {
+ "rep.pdf": "ملف الأدلة",
  "case.hint": "— اضغط على اكتشاف أو بلاغ لتحليله",
  "case.nourl": "هذا البلاغ لا يحتوي على عنوان موقع لتحليله. البلاغات التي تذكر رقم هاتف أو بريداً إلكترونياً لا يوجد لها ملف أدلة: الملف يتكوّن من بيانات التسجيل والشهادة والاستضافة لموقع واحد.",
  "rep.t.website": "موقع أو رابط مزيف",
@@ -621,15 +626,27 @@ async function review(decision){
 
 async function getEvidence(){
   if (!current) return;
-  const btn = document.getElementById("evbtn");
-  const msg = document.getElementById("revmsg");
-  const label = btn.textContent;
-  btn.textContent = d("evb.building"); btn.disabled = true;
+  return buildEvidence(current, document.getElementById("evbtn"),
+                       document.getElementById("revmsg"));
+}
+
+// Straight from a report row: the reviewer should not have to open the case
+// panel first to get the thing they came for.
+async function reportEvidence(i, ev){
+  if (ev) ev.stopPropagation();
+  const r = reports[i];
+  if (!r || !r.url) return;
+  return buildEvidence(r.url, ev && ev.target, document.getElementById("repmsg"));
+}
+
+async function buildEvidence(target, btn, msg){
+  const label = btn ? btn.textContent : "";
+  if (btn){ btn.textContent = d("evb.building"); btn.disabled = true; }
   msg.textContent = d("evb.collecting");
   try{
     const r = await fetch(API + "/evidence", {method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({url: current})});
+      body: JSON.stringify({url: target})});
     if (!r.ok){
       msg.textContent = r.status === 503 ? d("evb.nomod") : d("evb.failed", { c: r.status });
       return;
@@ -645,7 +662,7 @@ async function getEvidence(){
       + (hash ? '<br><span style="font-family:ui-monospace;font-size:11px;direction:ltr;display:inline-block">sha256 '
                 + esc(hash.slice(0,32)) + '…</span>' : "");
   }catch(e){ msg.textContent = d("rev.unreach"); }
-  finally{ btn.textContent = label; btn.disabled = false; }
+  finally{ if (btn){ btn.textContent = label; btn.disabled = false; } }
 }
 
 async function markOfficial(){
@@ -686,10 +703,13 @@ async function loadReports(){
       const auto = r.auto_verdict
         ? esc(word("v.", r.auto_verdict)) + (r.auto_score !== "" && r.auto_score != null ? " · " + esc(r.auto_score) : "")
         : d("dash");
-      const act = r.status === "pending"
+      const pdf = r.url
+        ? `<button class="pdf" onclick="reportEvidence(${i}, event)" title="${esc(r.url)}">${d("rep.pdf")}</button>`
+        : "";
+      const act = pdf + (r.status === "pending"
         ? `<button class="ghost" onclick="event.stopPropagation();setReport('${rid}','confirmed')">${d("rep.confirmed")}</button>
            <button class="ghost" onclick="event.stopPropagation();setReport('${rid}','rejected')">${d("rep.rejected")}</button>`
-        : "";
+        : "");
       // every row opens: one without a URL explains why there is no bundle,
       // which is more use to a reviewer than a row that ignores the click
       return `<tr id="rep${i}" onclick="openReport(${i})"><td><code>${esc(r.report_id)}</code></td><td>${esc(word("rep.t.", r.type))}</td>
