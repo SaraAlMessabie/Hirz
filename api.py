@@ -357,7 +357,7 @@ class NumIn(BaseModel):
 
 CLIENTS = ROOT / "clients"
 if CLIENTS.is_dir():
-    app.mount("/app", StaticFiles(directory="clients", html=True), name="clients")
+    app.mount("/app", StaticFiles(directory=CLIENTS, html=True), name="clients")
 
 
 @app.get("/dashboard")
