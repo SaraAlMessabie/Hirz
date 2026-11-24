@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1629">
+<title>Hirz — your safeguard against scams</title>
+<style>
+  :root {
+    --bg: #0b1629; --bg2: #0e2340; --card: #12233b; --line: #1f3656;
+    --text: #e8eef9; --muted: #93a8c4; --cyan: #38bdf8;
+    --red: #e63946;   --red-bg: #2b1219;
+    --amber: #f59e0b; --amber-bg: #2a2010;
+    --green: #22c55e; --green-bg: #0f2418;
+    --grey: #94a3b8;  --grey-bg: #18243a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; color: var(--text);
+    background: radial-gradient(120% 60% at 50% 0%, var(--bg2) 0%, var(--bg) 60%) fixed, var(--bg);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif; }
+  .phone { max-width: 390px; margin: 0 auto; min-height: 100vh; padding-bottom: 96px; }
+
+  .hero { position: relative; height: 150px; overflow: hidden;
+    background: #0b1629 url("img/header_bg.jpg") center bottom / cover no-repeat; }
+  .hero img { position: absolute; left: 50%; top: 6px; height: 120px; transform: translateX(-50%);
+    filter: drop-shadow(0 0 18px rgba(56,189,248,.25)); }
+  .hero .tag { position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 12.5px; color: #cfe3f7; }
+  .marks { position: absolute; top: 12px; display: flex; gap: 3px; }
+  .marks i { width: 4px; height: 10px; background: #e2e8f0; transform: skewX(-30deg); border-radius: 1px; }
+  .marks.l { left: 14px; } .marks.r { right: 14px; }
+  .flag { display: flex; height: 4px; }
+  .flag i { flex: 1; } .flag i:nth-child(1){background:#00732f} .flag i:nth-child(2){background:#fff}
+  .flag i:nth-child(3){background:#000} .flag i:nth-child(4){background:#ce1126}
+
+  .banner { display: none; margin: 12px 18px 0; padding: 10px 12px; border-radius: 10px; font-size: 13.5px;
+    background: var(--amber-bg); border: 1px solid #5a4410; color: #fcd34d; }
+  .banner.on { display: block; }
+
+  main { padding: 16px 18px 0; }
+  .panel { display: none; } .panel.on { display: block; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  h1 span { color: var(--muted); font-weight: 500; font-size: 16px; }
+  .lead { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+
+  form { display: flex; flex-direction: column; gap: 10px; }
+  label.f { font-size: 13px; color: var(--muted); margin-bottom: -6px; }
+  input, select {
+    width: 100%; padding: 13px 14px; font: inherit; font-size: 16px; color: var(--text);
+    background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; outline: none;
+  }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; }
+  input:focus, select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56,189,248,.18); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 14px; cursor: pointer;
+    color: #04121f; background: linear-gradient(180deg, #5ccdfb, #22a6e0);
+  }
+  button:disabled { opacity: .6; cursor: wait; }
+  .ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .danger { background: var(--red); color: #fff; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin-bottom: 14px;
+    background: rgba(18,35,59,.85); border: 1px solid var(--line); border-radius: 12px; }
+  .seg button { padding: 9px; font-size: 14px; background: transparent; color: var(--muted); border-radius: 9px; }
+  .seg button.on { background: #1b3a5e; color: var(--text); }
+
+  .spinner { display: none; align-items: center; gap: 10px; color: var(--muted); margin-top: 16px; font-size: 14px; }
+  .spinner.on { display: flex; }
+  .spinner i { flex: none; width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--line); border-top-color: var(--cyan); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { display: none; margin-top: 16px; padding: 12px 14px; border-radius: 12px; overflow-wrap: anywhere;
+    background: var(--grey-bg); border: 1px solid var(--line); font-size: 14px; }
+  .error.on { display: block; }
+
+  .result { margin-top: 18px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--card); }
+  .result[hidden] { display: none; }
+  .verdict { padding: 20px 18px 16px; text-align: center; }
+  .verdict .word { font-size: 34px; font-weight: 800; letter-spacing: .6px; line-height: 1.1; }
+  .verdict .sub { margin-top: 6px; font-size: 15px; }
+  .verdict .score { margin-top: 10px; font-size: 14px; color: var(--muted); }
+  .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); margin: 8px auto 0; max-width: 240px; overflow: hidden; }
+  .bar b { display: block; height: 100%; width: 0; transition: width .6s ease; }
+  .v-red   { background: var(--red-bg); }   .v-red   .word, .v-red   .sub { color: var(--red); }   .v-red   .bar b { background: var(--red); }
+  .v-amber { background: var(--amber-bg); } .v-amber .word, .v-amber .sub { color: var(--amber); } .v-amber .bar b { background: var(--amber); }
+  .v-green { background: var(--green-bg); } .v-green .word, .v-green .sub { color: var(--green); } .v-green .bar b { background: var(--green); }
+  .v-grey  { background: var(--grey-bg); }  .v-grey  .word, .v-grey  .sub { color: var(--grey); }  .v-grey  .bar b { background: var(--grey); }
+
+  .body { padding: 16px 18px 18px; }
+  .host { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; margin-bottom: 12px; }
+  .host b { color: var(--text); font-weight: 600; }
+  h2 { font-size: 15px; margin: 0 0 8px; padding-left: 9px; border-left: 3px solid var(--cyan); }
+  ul.reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.reasons li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; font-size: 15px;
+    background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; }
+  .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .risk .dot, .dot.no { background: var(--red-bg); color: var(--red); }
+  .safe .dot, .dot.yes { background: var(--green-bg); color: var(--green); }
+  .dot.na { background: var(--grey-bg); color: var(--grey); }
+  .empty { color: var(--muted); font-size: 14px; }
+  .note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+
+  .signals { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .signals div { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+  .signals small { color: var(--muted); margin-left: auto; }
+
+  .actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .evidence, .proceed { display: none; flex-direction: column; gap: 8px; }
+  .evidence.on, .proceed.on { display: flex; }
+  .evidence button { background: linear-gradient(180deg, #1d4f7a, #163d61); color: #e8f4ff; border: 1px solid #2b6496; }
+  .msg { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .msg.err { color: #fca5a5; }
+  .proceed .warn { display: none; font-size: 14px; color: var(--red); background: var(--red-bg);
+    border: 1px solid #5b1d22; border-radius: 10px; padding: 10px 12px; }
+  .proceed .warn.on { display: block; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
+  .item > button { width: 100%; text-align: left; background: transparent; color: var(--text); padding: 12px 14px;
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; border-radius: 0; font-weight: 500; }
+  .item .nm { font-weight: 600; font-size: 15px; }
+  .item .meta { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+  .chip { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 11.5px; font-weight: 700;
+    padding: 4px 8px; border-radius: 999px; letter-spacing: .3px; }
+  .chip.red { background: var(--red-bg); color: var(--red); } .chip.amber { background: var(--amber-bg); color: var(--amber); }
+  .chip.green { background: var(--green-bg); color: var(--green); } .chip.grey { background: var(--grey-bg); color: var(--grey); }
+  .badge { font-size: 10.5px; color: #c4b5fd; border: 1px solid #4c3d8f; border-radius: 6px; padding: 0 5px; margin-left: 6px; }
+  .item .detail { display: none; padding: 0 14px 14px; }
+  .item.open .detail { display: block; }
+
+  nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center;
+    background: rgba(9,18,34,.96); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  nav.tabs .inner { width: 100%; max-width: 390px; display: grid; grid-template-columns: repeat(3, 1fr); }
+  nav.tabs button { background: transparent; color: var(--muted); border-radius: 0; padding: 9px 4px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; }
+  nav.tabs button svg { width: 22px; height: 22px; }
+  nav.tabs button.on { color: var(--cyan); box-shadow: inset 0 2px 0 var(--cyan); }
+  footer { margin-top: 22px; padding: 0 18px; font-size: 12px; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <header class="hero">
+    <div class="marks l"><i></i><i></i><i></i><i></i></div>
+    <div class="marks r"><i></i><i></i><i></i><i></i></div>
+    <img src="img/hirz_logo.png" alt="Hirz">
+    <div class="tag">Your safeguard against scams · حمايتك من الاحتيال</div>
+  </header>
+  <div class="flag"><i></i><i></i><i></i><i></i></div>
+  <div id="banner" class="banner" role="status"></div>
+
+  <main>
+    <!-- ============ LINK ============ -->
+    <section id="p-link" class="panel on" aria-label="Check a link">
+      <h1>Check a link <span>· تحقق من رابط</span></h1>
+      <p class="lead">Paste a link from an SMS, email or chat.</p>
+      <form id="f-link" autocomplete="off">
+        <input id="link" type="text" inputmode="url" placeholder="https://example.com/login" aria-label="Link to check" required>
+        <button type="submit">Check link</button>
+      </form>
+      <div class="spinner"><i></i><span>Checking the link — this can take a few seconds…</span></div>
+      <div class="error" role="alert"></div>
+      <div class="result" hidden>
+        <div class="verdict"><div class="word"></div><div class="sub"></div><div class="score"></div><div class="bar"><b></b></div></div>
+        <div class="body">
+          <div class="host"></div>
+          <h2>Why</h2>
+          <ul class="reasons"></ul>
+          <div class="actions">
+            <div id="evidence" class="evidence">
+              <button id="evBtn" type="button">Download evidence report (PDF)</button>
+              <div id="evMsg" class="msg"></div>
+            </div>
+            <div id="proceed" class="proceed">
+              <button id="proceedBtn" type="button" class="ghost">Proceed anyway</button>
+              <div id="warn" class="warn">This link shows strong signs of a scam. Never enter a password, card number or OTP on it.
+                <div style="margin-top:10px"><button id="openBtn" type="button" class="danger" style="width:100%">I understand — open the link</button></div>
+              </div>
+            </div>
+          </div>
+          <div class="note">Risk assessments are advisory and are not proof of fraud.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NUMBER ============ -->
+    <section id="p-number" class="panel" aria-label="Check a phone number">
+      <h1>Check a number <span>· تحقق من رقم</span></h1>
+      <p class="lead">Someone called or messaged claiming to be a bank, courier or government office?</p>
+      <form id="f-number" autocomplete="off">
+        <label class="f" for="number">Phone number</label>
+        <input id="number" type="tel" inputmode="tel" placeholder="050 123 4567 or 600 50 2030" required>
+        <label class="f" for="nbrand">Who did they say they were?</label>
+        <select id="nbrand" class="brands"><option value="">Not sure / didn't say</option></select>
+        <button type="submit">Check number</button>
+      </form>
+      <div class="spinner"><i></i><span>Checking…</span></div>
+      <div class="error" role="alert"></div>
+      <div class="result" hidden>
+        <div class="verdict"><div class="word"></div><div class="sub"></div><div class="score"></div><div class="bar"><b></b></div></div>
+        <div class="body">
+          <div class="host"></div>
+          <h2>Why</h2>
+          <ul class="reasons"></ul>
+          <div class="note">If in doubt, hang up and call the number on the organisation's own website or card.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LISTING ============ -->
+    <section id="p-listing" class="panel" aria-label="Check a maps listing">
+      <h1>Check a listing <span>· تحقق من إعلان</span></h1>
+      <p class="lead">Found a "customer service" listing on Google Maps? Compare it with the brand's official information.</p>
+      <div class="seg" role="tablist">
+        <button id="seg-form" class="on" type="button" role="tab">Check one</button>
+        <button id="seg-demo" type="button" role="tab">Demo listings</button>
+      </div>
+
+      <div id="l-form">
+        <form id="f-listing" autocomplete="off">
+          <label class="f" for="lbrand">Brand</label>
+          <select id="lbrand" class="brands" required><option value="">Choose…</option></select>
+          <label class="f" for="lname">Listing name</label>
+          <input id="lname" type="text" placeholder="e.g. ADCB Customer Care Dubai">
+          <label class="f" for="lphone">Phone on the listing</label>
+          <input id="lphone" type="tel" inputmode="tel" placeholder="e.g. 050 000 1234" required>
+          <label class="f" for="laddr">Address on the listing</label>
+          <input id="laddr" type="text" placeholder="e.g. Office 12, Al Qusais, Dubai">
+          <div class="row2">
+            <div><label class="f" for="lsite">Website</label><input id="lsite" type="text" inputmode="url" placeholder="optional"></div>
+            <div><label class="f" for="lrev">Reviews</label><input id="lrev" type="number" min="0" placeholder="optional"></div>
+          </div>
+          <button type="submit">Check listing</button>
+        </form>
+        <div class="spinner"><i></i><span>Cross-checking phone, address, map and website…</span></div>
+        <div class="error" role="alert"></div>
+        <div class="result" hidden>
+          <div class="verdict"><div class="word"></div><div class="sub"></div></div>
+          <div class="body"><div class="signals"></div><h2>Why</h2><ul class="reasons"></ul>
+            <div class="note">Risk assessments are advisory and are not proof of fraud.</div></div>
+        </div>
+      </div>
+
+      <div id="l-demo" hidden>
+        <div class="spinner"><i></i><span>Loading listings…</span></div>
+        <div class="error" role="alert"></div>
+        <div id="demo-list" class="list"></div>
+        <button id="rescan" type="button" class="ghost" style="width:100%;margin-top:12px">Re-scan all listings</button>
+        <p class="note">Listings marked <span class="badge" style="margin:0">sample fake</span> are invented for the demo,
+          using fictional +971 50 000 XXXX numbers. All others were collected from Google Maps.</p>
+      </div>
+    </section>
+  </main>
+  <footer id="foot"></footer>
+</div>
+
+<nav class="tabs" aria-label="Sections"><div class="inner">
+  <button id="t-link" class="on" type="button" aria-controls="p-link">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Link</button>
+  <button id="t-number" type="button" aria-controls="p-number">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Number</button>
+  <button id="t-listing" type="button" aria-controls="p-listing">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Listing</button>
+</div></nav>
+
+<script>
+  // Served by hirz_server.py -> same origin. Opened as a file -> talk to the laptop's server.
+  const qs = new URLSearchParams(location.search);
+  const BASE = (qs.get("server") || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8001")).replace(/\/$/, "");
+  const $ = (id) => document.getElementById(id);
+  const within = (panel, sel) => panel.querySelector(sel);
+
+  // ---------- shared helpers
+  async function post(path, body) {
+    const r = await fetch(BASE + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) {
+      let detail = ""; try { detail = (await r.json()).detail || ""; } catch (_) {}
+      throw new Error(detail || "The server returned an error (HTTP " + r.status + ").");
+    }
+    return r;
+  }
+  function unreachable(err) {
+    return err instanceof TypeError
+      ? "Couldn't reach the Hirz server" + (BASE ? " at " + BASE : "") + ". Start it with: python -m uvicorn hirz_server:app --port 8001"
+      : err.message;
+  }
+  function busy(panel, on) {
+    within(panel, ".spinner").classList.toggle("on", on);
+    panel.querySelectorAll("form button").forEach((b) => (b.disabled = on));
+  }
+  function showError(panel, msg) { const e = within(panel, ".error"); e.textContent = msg; e.classList.add("on"); }
+  function clearOut(panel) { within(panel, ".error").classList.remove("on"); within(panel, ".result").hidden = true; }
+
+  function fillCard(card, { tone, word, sub, score, reasons }) {
+    const v = within(card, ".verdict");
+    v.className = "verdict v-" + tone;
+    within(v, ".word").textContent = word;
+    within(v, ".sub").textContent = sub;
+    const sc = within(v, ".score"), bar = within(v, ".bar b");
+    if (sc) sc.textContent = Number.isFinite(score) ? "Risk score " + score + " / 100" : "";
+    if (bar) { bar.style.width = "0"; requestAnimationFrame(() => (bar.style.width = (Number.isFinite(score) ? score : 0) + "%")); }
+    const ul = within(card, ".reasons"); ul.innerHTML = "";
+    if (!reasons.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No specific warning signs were reported."; ul.append(li); }
+    for (const r of reasons) {
+      const li = document.createElement("li"), safe = r.direction === "safe";
+      li.className = safe ? "safe" : "risk";
+      const d = document.createElement("span"); d.className = "dot"; d.textContent = safe ? "✓" : "!";
+      const t = document.createElement("span"); t.textContent = r.text || r.code || "";
+      li.append(d, t); ul.append(li);
+    }
+    card.hidden = false;
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ---------- tabs
+  const TABS = ["link", "number", "listing"];
+  function showTab(name) {
+    TABS.forEach((t) => { $("t-" + t).classList.toggle("on", t === name); $("p-" + t).classList.toggle("on", t === name); });
+    window.scrollTo({ top: 0 });
+  }
+  TABS.forEach((t) => $("t-" + t).addEventListener("click", () => showTab(t)));
+
+  // ---------- health + brands
+  (async () => {
+    $("foot").textContent = "Hirz server " + (BASE || location.origin);
+    try {
+      const h = await (await fetch(BASE + "/api/health")).json();
+      if (!h.checker_api) { $("banner").textContent = "The checker API isn't running. Start it with: python -m uvicorn api:app --port 8000"; $("banner").classList.add("on"); }
+    } catch (_) {
+      $("banner").textContent = "Can't reach the Hirz server. Start it with: python -m uvicorn hirz_server:app --port 8001, then open http://localhost:8001";
+      $("banner").classList.add("on");
+    }
+    try {
+      const brands = await (await fetch(BASE + "/api/brands")).json();
+      document.querySelectorAll("select.brands").forEach((sel) => {
+        for (const b of brands) { const o = document.createElement("option"); o.value = b.brand; o.textContent = b.display_name; o.dataset.name = b.display_name; sel.append(o); }
+      });
+    } catch (_) {}
+  })();
+
+  // ---------- LINK
+  const LINK = {
+    malicious:  ["red",   "DANGER",      "This link looks like a scam. Don't open it."],
+    suspicious: ["amber", "CAREFUL",     "Some warning signs. Check with the sender another way."],
+    clean:      ["green", "NO WARNINGS", "No warning signs found. This does not guarantee safety."],
+    unknown:    ["grey",  "UNKNOWN",     "We couldn't assess this link."],
+  };
+  let lastUrl = "";
+  const pLink = $("p-link");
+  function resetEvidence() {
+    ["evidence", "proceed", "warn"].forEach((id) => $(id).classList.remove("on"));
+    $("evBtn").disabled = false; $("evBtn").textContent = "Download evidence report (PDF)";
+    $("evMsg").className = "msg"; $("evMsg").textContent = "English and Arabic, ready to send to the police.";
+  }
+  $("f-link").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = $("link").value.trim(); if (!url) return;
+    lastUrl = url; clearOut(pLink); resetEvidence(); busy(pLink, true);
+    try {
+      const d = await (await post("/api/check", { url })).json();
+      const [tone, word, sub] = LINK[d.verdict] || LINK.unknown;
+      const host = within(pLink, ".host"); host.innerHTML = "";
+      if (d.host) { const b = document.createElement("b"); b.textContent = d.reg_domain || d.host; host.append("Real domain: ", b);
+        if (d.reg_domain && d.host !== d.reg_domain) host.append(" (full address: " + d.host + ")"); }
+      if (d.verdict === "malicious" || d.verdict === "suspicious") $("evidence").classList.add("on");
+      if (d.verdict === "malicious") $("proceed").classList.add("on");
+      fillCard(within(pLink, ".result"), { tone, word, sub, score: d.score, reasons: d.reasons || [] });
+    } catch (err) { showError(pLink, unreachable(err)); }
+    finally { busy(pLink, false); }
+  });
+  $("evBtn").addEventListener("click", async () => {
+    const btn = $("evBtn"), msg = $("evMsg");
+    btn.disabled = true; btn.textContent = "Building report…"; msg.className = "msg";
+    msg.textContent = "Collecting registration, certificate and hosting details — about 10–30 seconds.";
+    try {
+      const r = await post("/api/evidence", { url: lastUrl });
+      const blob = await r.blob(), id = r.headers.get("X-Evidence-Id") || "report";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = "hirz-evidence-" + id + ".pdf";
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      btn.textContent = "Downloaded ✓  (download again)";
+      const h = r.headers.get("X-Bundle-SHA256") || "";
+      msg.textContent = "Saved as " + a.download + (h ? ". Integrity hash " + h.slice(0, 16) + "…" : ".");
+    } catch (err) { btn.textContent = "Download evidence report (PDF)"; msg.className = "msg err"; msg.textContent = unreachable(err); }
+    finally { btn.disabled = false; }
+  });
+  $("proceedBtn").addEventListener("click", () => $("warn").classList.add("on"));
+  $("openBtn").addEventListener("click", () => window.open(/^https?:\/\//i.test(lastUrl) ? lastUrl : "https://" + lastUrl, "_blank", "noopener,noreferrer"));
+
+  // ---------- NUMBER
+  const pNum = $("p-number");
+  $("f-number").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const number = $("number").value.trim(); if (!number) return;
+    const sel = $("nbrand"), brandName = sel.value ? sel.selectedOptions[0].dataset.name : null;
+    clearOut(pNum); busy(pNum, true);
+    try {
+      const d = await (await post("/api/check-number", { number, brand_context: brandName })).json();
+      const reasons = d.reasons || [], official = reasons.some((r) => r.code === "official");
+      let card;
+      if (official) card = ["green", "OFFICIAL NUMBER", "This matches a published customer service number."];
+      else if (d.verdict === "malicious") card = ["red", "DANGER", "Don't call back and never share codes or card details."];
+      else if (d.verdict === "suspicious") card = ["amber", "CAREFUL", "Not a number this organisation publishes. Use the one on its own website."];
+      else if (d.verdict === "clean") card = ["green", "NO WARNINGS", "No warning signs found. This does not prove the caller is genuine."];
+      else card = ["grey", "UNKNOWN", "We couldn't assess this number."];
+      within(pNum, ".host").innerHTML = "";
+      if (d.number) { const b = document.createElement("b"); b.textContent = d.number; within(pNum, ".host").append("Number: ", b); }
+      fillCard(within(pNum, ".result"), { tone: card[0], word: card[1], sub: card[2], score: d.score, reasons });
+    } catch (err) { showError(pNum, unreachable(err)); }
+    finally { busy(pNum, false); }
+  });
+
+  // ---------- LISTING
+  const LISTING = {
+    fabricated: ["red",   "FAKE LISTING",          "Don't call this number."],
+    suspicious: ["amber", "CAREFUL",               "Some details don't match the brand's official information."],
+    genuine:    ["green", "MATCHES OFFICIAL INFO", "Its details match the brand's own published information."],
+    unverified: ["grey",  "NOT VERIFIED",          "Nothing contradicts it, but too little could be checked."],
+  };
+  const SIGNALS = [
+    ["phone_in_official", "Phone is the brand's published number"],
+    ["address_in_branches", "Address is on the official branch list"],
+    ["found_in_osm", "Mapped on OpenStreetMap at this address"],
+    ["web_mentions", "Name and phone appear elsewhere online"],
+    ["website_official", "Website is the brand's official domain"],
+  ];
+  function signalsHTML(row) {
+    const box = document.createElement("div"); box.className = "signals";
+    for (const [k, label] of SIGNALS) {
+      let v = row[k];
+      if (k === "web_mentions") v = v === "" || v == null ? "" : (Number(v) >= 2 ? "true" : "false");
+      const line = document.createElement("div"), d = document.createElement("span");
+      d.className = "dot " + (v === "true" ? "yes" : v === "false" ? "no" : "na");
+      d.textContent = v === "true" ? "✓" : v === "false" ? "✗" : "–";
+      const t = document.createElement("span"); t.textContent = label;
+      const s = document.createElement("small"); s.textContent = v === "true" ? "agrees" : v === "false" ? "disagrees" : "not checked";
+      line.append(d, t, s); box.append(line);
+    }
+    return box;
+  }
+  function reasonsList(reasons) {
+    const ul = document.createElement("ul"); ul.className = "reasons";
+    for (const text of reasons) {
+      const li = document.createElement("li"), d = document.createElement("span"), t = document.createElement("span");
+      const neutral = /not checked|could not be checked|neither confirm|no official branch list|has no website/i.test(text);
+      const good = /published helpline|matches|is an official|shows a .* location|consistent with|appear on \d+ other/i.test(text);
+      li.className = good ? "safe" : neutral ? "" : "risk";
+      d.className = "dot" + (neutral && !good ? " na" : ""); d.textContent = good ? "✓" : neutral ? "–" : "!";
+      t.textContent = text; li.append(d, t); ul.append(li);
+    }
+    return ul;
+  }
+  const pList = $("p-listing"), lForm = $("l-form"), lDemo = $("l-demo");
+  $("seg-form").addEventListener("click", () => { $("seg-form").classList.add("on"); $("seg-demo").classList.remove("on"); lForm.hidden = false; lDemo.hidden = true; });
+  $("seg-demo").addEventListener("click", () => { $("seg-demo").classList.add("on"); $("seg-form").classList.remove("on"); lForm.hidden = true; lDemo.hidden = false; loadDemo(false); });
+
+  $("f-listing").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearOut(lForm); busy(lForm, true);
+    try {
+      const rev = $("lrev").value.trim();
+      const row = await (await post("/api/listing", { brand: $("lbrand").value, name: $("lname").value.trim(),
+        phone: $("lphone").value.trim(), address: $("laddr").value.trim(), website: $("lsite").value.trim(),
+        review_count: rev === "" ? null : Number(rev) })).json();
+      const [tone, word, sub] = LISTING[row.verdict] || LISTING.unverified;
+      const card = within(lForm, ".result");
+      const v = within(card, ".verdict"); v.className = "verdict v-" + tone;
+      within(v, ".word").textContent = word; within(v, ".sub").textContent = sub;
+      const body = within(card, ".body"); body.querySelector(".signals").replaceWith(signalsHTML(row));
+      body.querySelector(".reasons").replaceWith(reasonsList(row.reasons || []));
+      card.hidden = false; card.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (err) { showError(lForm, unreachable(err)); }
+    finally { busy(lForm, false); }
+  });
+
+  let demoLoaded = false;
+  async function loadDemo(refresh) {
+    if (demoLoaded && !refresh) return;
+    const list = $("demo-list"); within(lDemo, ".error").classList.remove("on");
+    within(lDemo, ".spinner").classList.add("on"); $("rescan").disabled = true;
+    if (refresh) list.innerHTML = "";
+    try {
+      const r = await fetch(BASE + "/api/listings" + (refresh ? "?refresh=1" : ""));
+      if (!r.ok) { let d = ""; try { d = (await r.json()).detail || ""; } catch (_) {} throw new Error(d || "HTTP " + r.status); }
+      const rows = await r.json(); list.innerHTML = "";
+      for (const row of rows) {
+        const [tone, word] = LISTING[row.verdict] || LISTING.unverified;
+        const item = document.createElement("div"); item.className = "item";
+        const head = document.createElement("button"); head.type = "button"; head.setAttribute("aria-expanded", "false");
+        const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = row.name;
+        if (row.synthetic === "true") { const b = document.createElement("span"); b.className = "badge"; b.textContent = "sample fake"; nm.append(b); }
+        const chip = document.createElement("span"); chip.className = "chip " + tone; chip.textContent = word;
+        const meta = document.createElement("span"); meta.className = "meta";
+        meta.textContent = row.phone + " · " + row.disagreement_count + " check" + (row.disagreement_count === "1" ? "" : "s") + " disagree";
+        head.append(nm, chip, meta);
+        const det = document.createElement("div"); det.className = "detail";
+        det.append(signalsHTML(row), reasonsList(row.reasons || []));
+        head.addEventListener("click", () => { item.classList.toggle("open"); head.setAttribute("aria-expanded", item.classList.contains("open")); });
+        item.append(head, det); list.append(item);
+      }
+      demoLoaded = true;
+    } catch (err) { showError(lDemo, unreachable(err)); }
+    finally { within(lDemo, ".spinner").classList.remove("on"); $("rescan").disabled = false; }
+  }
+  $("rescan").addEventListener("click", () => loadDemo(true));
+  if (location.hash === "#number") showTab("number");
+  if (location.hash === "#listing") showTab("listing");
+</script>
+</body>
+</html>

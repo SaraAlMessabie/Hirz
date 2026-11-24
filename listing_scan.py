@@ -240,40 +240,47 @@ def decide(sig, phone_verdict, display):
     return n, "suspicious", f"{n} check(s) disagree with {display}'s official information. Call the number on {display}'s own website instead."
 
 
+def scan_one(L, api, brands, branches, brave_key="", email=""):
+    """Check one listing dict (brand, name, address, phone, website, review_count)."""
+    brand = (L.get("brand") or "").lower()
+    b = brands.get(brand, {"display_name": brand or "the brand", "official_domains": ""})
+    display = b["display_name"]
+
+    phone_ok, phone_verdict, s_phone = phone_check(api, L.get("phone"), display)
+    addr_ok, match, s_addr = address_check(L.get("address"), branches.get(brand, []), display)
+    osm_ok, s_osm = osm_check(L, display, email)
+    web_n, s_web = web_check(L, brave_key)
+    site_ok, s_site = website_check(L.get("website"), b)
+
+    sig = {"phone_in_official": phone_ok, "address_in_branches": addr_ok, "found_in_osm": osm_ok,
+           "web_mentions": None if web_n is None else web_n >= 2, "website_official": site_ok}
+    n, verdict, summary = decide(sig, phone_verdict, display)
+    reasons = [summary, s_phone, s_addr, s_osm, s_web, s_site]
+    rc = L.get("review_count")
+    if rc not in (None, ""):
+        rc = int(rc or 0)
+        if rc < 5:
+            reasons.append("The listing has no reviews." if rc == 0 else
+                           f"The listing has only {rc} review{'s' if rc != 1 else ''}.")
+
+    fmt = lambda v: "" if v is None else str(v).lower()
+    return {"brand": brand, "name": L.get("name", ""), "phone": L.get("phone", ""),
+            "phone_in_official": fmt(phone_ok), "address_in_branches": fmt(addr_ok),
+            "found_in_osm": fmt(osm_ok), "web_mentions": "" if web_n is None else web_n,
+            "disagreement_count": n, "verdict": verdict,
+            "website_official": fmt(site_ok), "phone_verdict": phone_verdict or "",
+            "matched_branch": match, "reasons": " | ".join(r for r in reasons if r),
+            "synthetic": str(bool(L.get("synthetic"))).lower(),
+            "source": L.get("source", "manual")}
+
+
 def scan(api, places_key="", brave_key="", email=""):
     brands, branches = load_refs()
     listings, source = load_listings(places_key)
     rows = []
     for L in listings:
-        brand = (L.get("brand") or "").lower()
-        b = brands.get(brand, {"display_name": brand or "the brand", "official_domains": ""})
-        display = b["display_name"]
-
-        phone_ok, phone_verdict, s_phone = phone_check(api, L.get("phone"), display)
-        addr_ok, match, s_addr = address_check(L.get("address"), branches.get(brand, []), display)
-        osm_ok, s_osm = osm_check(L, display, email)
-        web_n, s_web = web_check(L, brave_key)
-        site_ok, s_site = website_check(L.get("website"), b)
-
-        sig = {"phone_in_official": phone_ok, "address_in_branches": addr_ok, "found_in_osm": osm_ok,
-               "web_mentions": None if web_n is None else web_n >= 2, "website_official": site_ok}
-        n, verdict, summary = decide(sig, phone_verdict, display)
-        reasons = [summary, s_phone, s_addr, s_osm, s_web, s_site]
-        rc = L.get("review_count")
-        if rc is not None and int(rc or 0) < 5:
-            rc = int(rc or 0)
-            reasons.append("The listing has no reviews." if rc == 0 else
-                           f"The listing has only {rc} review{'s' if rc != 1 else ''}.")
-
-        fmt = lambda v: "" if v is None else str(v).lower()
-        rows.append({"brand": brand, "name": L.get("name", ""), "phone": L.get("phone", ""),
-                     "phone_in_official": fmt(phone_ok), "address_in_branches": fmt(addr_ok),
-                     "found_in_osm": fmt(osm_ok), "web_mentions": "" if web_n is None else web_n,
-                     "disagreement_count": n, "verdict": verdict,
-                     "website_official": fmt(site_ok), "phone_verdict": phone_verdict or "",
-                     "matched_branch": match, "reasons": " | ".join(r for r in reasons if r),
-                     "synthetic": str(bool(L.get("synthetic"))).lower(),
-                     "source": L.get("source", source)})
+        L.setdefault("source", source)
+        rows.append(scan_one(L, api, brands, branches, brave_key, email))
     return rows
 
 
