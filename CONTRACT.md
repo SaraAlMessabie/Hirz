@@ -25,9 +25,30 @@ Base: `http://127.0.0.1:8000` — CORS is open, so static HTML works from disk.
 }
 ```
 
+### lookup order inside /check
+Each step short-circuits, so a hit returns immediately and nothing below runs.
+
+| # | Check | Source | Cost |
+|---|---|---|---|
+| 0a | **Official allowlist** | `data/official.csv` + restricted suffixes (`.gov.ae`, `.mil.ae`, `.ac.ae`) | instant |
+| 0b | **Confirmed scam** | `data/confirmed.csv` | instant |
+| 0c | **Recent result cache** | `data/check_cache.json`, age-dependent TTL | instant |
+| 0d | Reported (shallow requests only) | discovery output | instant |
+| 1 | Lexical + model | — | ~50 ms |
+| 2 | RDAP, TLS, page, cloaking | — | 5-10 s |
+| 3 | LLM, ambiguous cases only | Ollama | 3-8 s |
+
+Suffix matching is anchored on the **full host**, so
+`tamm.abudhabi.gov.ae.secure-login.xyz` does not match `.gov.ae`.
+
+Cache TTL scales with domain age: 15 min for a domain registered this week,
+7 days for one registered years ago. Confirming a domain or adding an official
+one clears the cache so the new status shows immediately.
+
 ### status, and why it matters
 | status | meaning |
 |---|---|
+| `OFFICIAL` | A verified organisation domain. Never reaches the heuristics. |
 | `CONFIRMED` | A human reviewer verified it. The only status we present as certain. |
 | `REPORTED` | Our discovery layer or a user flagged it. **Unverified.** |
 | `SUSPICIOUS` | Scored above the escalation threshold this request. |
@@ -51,6 +72,15 @@ Same response shape.
 | `GET /campaigns` | infrastructure clusters + predicted domains |
 | `GET /confirmed` | human-verified domains only |
 | `GET /reviews` | the audit trail |
+
+## GET / POST /official
+The verified-organisation allowlist. Read it, or add a domain:
+```json
+{ "domain": "adcb.com", "org": "Abu Dhabi Commercial Bank",
+  "source": "brand_website", "added_by": "investigator" }
+```
+Seeded with 25 UAE banks, couriers, telecoms and government portals.
+Every value must come from the organisation's own site.
 
 ## POST /review
 The **only** path from `REPORTED` into `CONFIRMED`.

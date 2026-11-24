@@ -126,7 +126,9 @@ async function loadStats(){
     <div class="stat"><div class="n">${s.permutation_with_mx}</div>
       <div class="l">With mail servers configured</div></div>
     <div class="stat"><div class="n">${r.confirmed ?? 0}</div>
-      <div class="l">Confirmed by a reviewer</div></div>`;
+      <div class="l">Confirmed by a reviewer</div></div>
+    <div class="stat"><div class="n">${r.official ?? 0}</div>
+      <div class="l">Verified official domains</div></div>`;
   document.getElementById("updated").textContent =
     "updated " + new Date().toLocaleTimeString();
 }
@@ -200,6 +202,7 @@ async function pick(i){
     <div style="display:flex;gap:8px;margin:6px 0 4px">
       <button class="ok" onclick="review('confirm')">Confirm as scam</button>
       <button class="no" onclick="review('reject')">Reject</button>
+      <button class="ghost" onclick="markOfficial()">Mark official</button>
     </div>
     <div id="revmsg" class="muted" style="padding:4px 0"></div>
 
@@ -224,6 +227,24 @@ async function review(decision){
     msg.textContent = r.ok
       ? `${decision === "confirm" ? "Confirmed" : "Rejected"} — ${r.confirmed} confirmed total`
       : ("error: " + r.error);
+    loadStats();
+  }catch(e){ msg.textContent = "could not reach the API"; }
+}
+
+async function markOfficial(){
+  if (!current) return;
+  const org = prompt("Organisation this domain belongs to:", "");
+  if (org === null) return;
+  const msg = document.getElementById("revmsg");
+  msg.textContent = "saving…";
+  try{
+    const r = await (await fetch(API + "/official", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({domain: current, org,
+                            source: "reviewer_verified",
+                            added_by: "investigator"})})).json();
+    msg.textContent = r.ok ? `Added to the official allowlist (${r.total} total)`
+                           : "Already on the allowlist";
     loadStats();
   }catch(e){ msg.textContent = "could not reach the API"; }
 }

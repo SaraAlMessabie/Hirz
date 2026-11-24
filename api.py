@@ -4,7 +4,7 @@ Scam detection API.
   POST /check-number   {"number": "+971...", "brand_context": "ADCB"}
   GET  /stats  /detections  /campaigns  /blocklist
 """
-import csv, pathlib
+import csv, json, pathlib, time
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -136,6 +136,103 @@ def record_review(domain, decision, reviewer, note=""):
 
 load_lists()
 
+# ------------------------------------------------- official / verified
+# Checked BEFORE anything else. A real bank or government site must never
+# reach the heuristics - Criterion 1 penalises exactly that false positive.
+OFFICIAL_FILE = pathlib.Path("data/official.csv")
+OFFICIAL_DOMAINS = {}
+
+# Restricted second-level domains: only the named authority can register under
+# them, so an anchored suffix match is safe. Note this matches the FULL host,
+# so "tamm.abudhabi.gov.ae.evil.xyz" does NOT match.
+OFFICIAL_SUFFIXES = (".gov.ae", ".mil.ae", ".ac.ae", ".sch.ae",
+                     ".gov.uk", ".gov", ".mil")
+
+
+def load_official():
+    OFFICIAL_DOMAINS.clear()
+    for row in _rows("data/official.csv"):
+        d = (row.get("domain") or "").strip().lower()
+        if d:
+            OFFICIAL_DOMAINS[d] = row
+    print(f"official allowlist: {len(OFFICIAL_DOMAINS)} domains "
+          f"+ {len(OFFICIAL_SUFFIXES)} restricted suffixes")
+
+
+def official_hit(host, reg):
+    """Exact registrable-domain match, or a restricted government suffix."""
+    rec = OFFICIAL_DOMAINS.get(reg) or OFFICIAL_DOMAINS.get(host)
+    if rec:
+        return rec, f"Listed as an official domain of {rec.get('org') or reg}"
+    for suf in OFFICIAL_SUFFIXES:
+        if host.endswith(suf):
+            return ({"domain": reg, "org": "government entity",
+                     "source": "restricted_suffix"},
+                    f"Registered under {suf}, which only government "
+                    f"entities may use")
+    return None, ""
+
+
+def add_official(domain, org, source, added_by):
+    d = domain.strip().lower()
+    if d in OFFICIAL_DOMAINS:
+        return False
+    rec = {"domain": d, "org": org, "source": source,
+           "added_by": added_by, "added_at": now()}
+    OFFICIAL_DOMAINS[d] = rec
+    fresh = not OFFICIAL_FILE.exists()
+    with OFFICIAL_FILE.open("a", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        if fresh:
+            w.writerow(["domain", "org", "source", "added_by", "added_at"])
+        w.writerow([d, org, source, added_by, rec["added_at"]])
+    return True
+
+
+load_official()
+
+# ------------------------------------------------- deep-result cache
+# Avoids re-running a 10s analysis on a domain we just checked.
+# TTL is age-dependent: a domain registered last week can be weaponised
+# tomorrow, a twenty-year-old one cannot.
+CACHE_FILE = pathlib.Path("data/check_cache.json")
+CHECK_CACHE = {}
+
+TTL_BY_AGE = {-1: 1800, 0: 900, 1: 1800, 2: 7200,
+              3: 86400, 4: 604800, 5: 604800}
+
+
+def load_cache():
+    if CACHE_FILE.exists():
+        try:
+            CHECK_CACHE.update(json.loads(CACHE_FILE.read_text("utf-8")))
+        except Exception:
+            pass
+    print(f"deep-check cache: {len(CHECK_CACHE)} entries")
+
+
+def cache_get(key):
+    e = CHECK_CACHE.get(key)
+    if not e:
+        return None
+    age_b = (e.get("result", {}).get("enrichment") or {}).get("age_bucket", -1)
+    ttl = TTL_BY_AGE.get(age_b if isinstance(age_b, int) else -1, 1800)
+    if time.time() - e.get("at", 0) > ttl:
+        CHECK_CACHE.pop(key, None)
+        return None
+    return e["result"]
+
+
+def cache_put(key, result):
+    CHECK_CACHE[key] = {"at": time.time(), "result": result}
+    try:
+        CACHE_FILE.write_text(json.dumps(CHECK_CACHE)[:8_000_000], "utf-8")
+    except Exception:
+        pass
+
+
+load_cache()
+
 # ---------------------------------------------------------------- helplines
 OFFICIAL, BRAND_NUMBERS = set(), {}
 for _row in _rows("data/helplines.csv"):
@@ -166,9 +263,11 @@ def root():
     return {"service": "scam-detect", "status": "ok",
             "endpoints": ["POST /check", "POST /check-number", "GET /stats",
                           "GET /detections", "GET /campaigns", "GET /confirmed",
+                          "GET/POST /official",
                           "POST /review", "GET /reviews"],
             "docs": "/docs", "features": len(FEATS),
             "confirmed": len(CONFIRMED), "reported": len(REPORTED),
+            "official": len(OFFICIAL_DOMAINS), "cached": len(CHECK_CACHE),
             "official_numbers": len(OFFICIAL),
             "thresholds": {"escalate": ESCALATE, "block": BLOCK}}
 
@@ -261,9 +360,34 @@ def review(body: ReviewIn):
     if body.decision not in ("confirm", "reject"):
         return {"ok": False, "error": "decision must be confirm or reject"}
     record_review(d, body.decision, body.reviewer, body.note)
+    CHECK_CACHE.clear()
     return {"ok": True, "domain": d, "decision": body.decision,
             "confirmed": len(CONFIRMED), "reported": len(REPORTED),
             "reviewed_at": now()}
+
+
+class OfficialIn(BaseModel):
+    domain: str
+    org: str = ""
+    source: str = ""
+    added_by: str = "investigator"
+
+
+@app.get("/official")
+def official(limit: int = 200):
+    return {"total": len(OFFICIAL_DOMAINS),
+            "restricted_suffixes": list(OFFICIAL_SUFFIXES),
+            "items": list(OFFICIAL_DOMAINS.values())[:limit]}
+
+
+@app.post("/official")
+def official_add(body: OfficialIn):
+    """Add a verified official domain. Sourced from the organisation's own site."""
+    ok = add_official(body.domain, body.org, body.source, body.added_by)
+    CHECK_CACHE.clear()                 # a new allowlist entry invalidates cache
+    return {"ok": ok, "domain": body.domain.strip().lower(),
+            "total": len(OFFICIAL_DOMAINS),
+            "note": "already listed" if not ok else "added"}
 
 
 @app.get("/reviews")
@@ -279,6 +403,17 @@ def check(body: UrlIn):
     host = host.lower().strip(".")
     reg = host if host.endswith(FREE_HOSTS) else reg_of(host)
 
+    # 0a. official / verified - before every heuristic
+    off, off_text = official_hit(host, reg)
+    if off:
+        return {"url": raw, "host": host, "reg_domain": reg,
+                "status": "OFFICIAL", "verdict": "clean", "score": 0,
+                "cached": True, "advisory": ADVISORY,
+                "reasons": [{"code": "official", "direction": "safe",
+                             "text": off_text}],
+                "enrichment": {}, "checked_at": now()}
+
+    # 0b. confirmed by a human
     conf = CONFIRMED.get(reg) or CONFIRMED.get(host)
     if conf:
         seen = str(conf.get("first_seen") or "")[:10]
@@ -293,6 +428,15 @@ def check(body: UrlIn):
                 "cached": True, "advisory": ADVISORY,
                 "reasons": [{"code": "confirmed", "direction": "risk", "text": note}],
                 "enrichment": {}, "checked_at": now()}
+
+    # 0c. did we already deep-check this recently?
+    cache_key = f"{reg}|{int(body.deep)}"
+    hitc = cache_get(cache_key)
+    if hitc:
+        out = dict(hitc)
+        out["cached"] = True
+        out["checked_at"] = hitc.get("checked_at")
+        return out
 
     rep = REPORTED.get(reg) or REPORTED.get(host)
     if rep and not body.deep:
@@ -428,7 +572,7 @@ def check(body: UrlIn):
     if status == "NO_MATCH" and not reasons:
         reasons = [{"code": "no_match", "direction": "neutral", "text": NO_MATCH_TEXT}]
 
-    return {"url": raw, "host": host, "reg_domain": reg,
+    result = {"url": raw, "host": host, "reg_domain": reg,
             "status": status, "verdict": verdict, "score": final_score,
             "cached": False, "advisory": ADVISORY,
             "reasons": reasons[:6],
@@ -443,6 +587,9 @@ def check(body: UrlIn):
                 "llm": llm,
             },
             "checked_at": now()}
+
+    cache_put(cache_key, result)
+    return result
 
 
 @app.post("/check-number")
