@@ -4,7 +4,8 @@ Evidence package (Task 4).
   build(check_response) -> dict      bundle with a chain-of-custody hash
   verify(bundle) -> bool             recompute bundle_sha256
 
-  python evidence.py <url>           calls POST /check, writes evidence/<id>.json + .pdf
+  python evidence.py <url>           calls POST /check, writes evidence/<id>.json,
+                                     <id>.pdf (English) and <id>_ar.pdf (Arabic)
   python evidence.py --verify evidence/<id>.json
 
 Options:  --api http://127.0.0.1:8000   where api.py is running
@@ -296,100 +297,225 @@ def build(check_response: dict, fetch: bool = True) -> dict:
 
 
 # ---------------------------------------------------------------- PDF
-VERDICT_TEXT = {
-    "malicious":  ("MALICIOUS", (200, 30, 30),
-                   "This link shows strong signs of a scam designed to steal personal or payment details."),
-    "suspicious": ("SUSPICIOUS", (190, 120, 0),
-                   "This link shows some warning signs and should be treated with caution."),
-    "clean":      ("NO WARNINGS", (20, 130, 60),
-                   "No warning signs were found. This does not guarantee the link is safe."),
-    "unknown":    ("UNKNOWN", (100, 110, 125), "The link could not be assessed."),
+ASSETS = pathlib.Path(__file__).resolve().parent / "assets"
+LOGO = ASSETS / "hirz_logo.png"
+FONT_REG = ASSETS / "fonts" / "DejaVuSans.ttf"
+FONT_BOLD = ASSETS / "fonts" / "DejaVuSans-Bold.ttf"
+NAVY = (11, 22, 41)
+
+VERDICT_COLOR = {"malicious": (230, 57, 70), "suspicious": (245, 158, 11),
+                 "clean": (34, 197, 94), "unknown": (148, 163, 184)}
+
+T = {
+    "en": {
+        "verdict": {"malicious": "MALICIOUS", "suspicious": "SUSPICIOUS",
+                    "clean": "NO WARNINGS", "unknown": "UNKNOWN"},
+        "meaning": {
+            "malicious": "This link shows strong signs of a scam designed to steal personal or payment details.",
+            "suspicious": "This link shows some warning signs and should be treated with caution.",
+            "clean": "No warning signs were found. This does not guarantee the link is safe.",
+            "unknown": "The link could not be assessed."},
+        "title": "Hirz evidence report", "captured": "captured", "score": "Risk score",
+        "link": "Link examined", "real": "Real domain", "full": "full host",
+        "why": "Why it was flagged", "none": "No specific warning signs were reported.",
+        "shot": "Screenshot", "noshot": None,
+        "report": "Where to report it (most effective first)",
+        "appendix": "Technical appendix",
+        "disclaimer": "Risk assessments are advisory and are not proof of fraud.",
+        "targets": {}, "notes": {},
+    },
+    "ar": {
+        "verdict": {"malicious": "احتيالي", "suspicious": "مشبوه",
+                    "clean": "لا توجد تحذيرات", "unknown": "غير معروف"},
+        "meaning": {
+            "malicious": "تظهر على هذا الرابط مؤشرات قوية على أنه احتيال يهدف إلى سرقة البيانات الشخصية أو بيانات الدفع.",
+            "suspicious": "تظهر على هذا الرابط بعض المؤشرات التحذيرية، ويجب التعامل معه بحذر.",
+            "clean": "لم يتم العثور على مؤشرات تحذيرية. هذا لا يضمن أن الرابط آمن.",
+            "unknown": "تعذر تقييم هذا الرابط."},
+        "title": "تقرير أدلة حرز", "captured": "تاريخ الالتقاط", "score": "درجة الخطورة",
+        "link": "الرابط الذي تم فحصه", "real": "النطاق الحقيقي", "full": "العنوان الكامل",
+        "why": "أسباب التصنيف", "none": "لم يتم الإبلاغ عن مؤشرات تحذيرية محددة.",
+        "shot": "لقطة الشاشة", "noshot": "لم تلتقط لقطة شاشة.",
+        "shot_ok": "التقطت بواسطة urlscan.io (ماسح مستقل).",
+        "report": "جهات الإبلاغ (الأكثر فعالية أولا)",
+        "appendix": "الملحق التقني (بالإنجليزية)",
+        "disclaimer": "تقييمات المخاطر استرشادية وليست دليلا على الاحتيال.",
+        "targets": {1: "جهة تسجيل النطاق (قسم البلاغات)", "host": "مزود الاستضافة",
+                    "cf": "Cloudflare (وسيط أمام الخادم الحقيقي)", 3: "التصفح الآمن من Google",
+                    4: "ملف قضية للشرطة"},
+        "notes": {"RDAP listed no abuse contact; use the registrar's website.":
+                      "لم يدرج سجل RDAP جهة اتصال للبلاغات؛ استخدم موقع جهة التسجيل.",
+                  "No network abuse contact found.": "لم يعثر على جهة اتصال للبلاغات لدى الشبكة.",
+                  "Submit this PDF through official AD Police channels.":
+                      "يقدم هذا التقرير عبر القنوات الرسمية لشرطة أبوظبي."},
+    },
+}
+
+# Arabic for the reason codes api.py returns; unknown codes fall back to the English text.
+REASON_AR = {
+    "free_host": "مستضاف على منصة مجانية تصدر شهادات HTTPS فورية",
+    "cheap_tld": "يستخدم امتداد نطاق رخيصا يشتريه المحتالون بكميات كبيرة",
+    "n_hyphens": "اسم النطاق محشو بشرطات",
+    "dom_len": "اسم نطاق طويل بشكل غير معتاد",
+    "entropy": "اسم النطاق يبدو مولدا عشوائيا",
+    "n_digits": "أرقام مضافة إلى اسم النطاق",
+    "digit_ratio": "نسبة عالية من الأرقام في اسم النطاق",
+    "brand_in_dom": "يحتوي على اسم علامة تجارية محمية",
+    "kw_in_dom": "كلمات أمنية في اسم النطاق",
+    "mobile_prefix": "رقم هاتف متحرك شخصي، بينما تنشر البنوك وشركات الشحن والجهات الحكومية في الإمارات أرقاما مجانية أو أرضية",
+    "not_in_official_set": "ليس من الأرقام المنشورة رسميا للجهة",
+    "official": "يطابق رقم خدمة العملاء المنشور للجهة",
+    "ct_free_ca": "الشهادة صادرة عن جهة مجانية",
+    "ct_age_bucket": "صدرت شهادة النطاق حديثا جدا",
+    "ct_max_san": "الشهادة تغطي عددا كبيرا من النطاقات غير المرتبطة (إصدار بالجملة)",
+    "ct_found": "لم يعثر على سجل للشهادات",
+    "_rule_brand_misplaced": "اسم العلامة التجارية يظهر في النطاق الفرعي بينما النطاق الحقيقي مختلف",
+    "_rule_kw_in_sub": "كلمات أمنية مستخدمة في النطاق الفرعي",
+    "_rule_deep_sub": "تداخل غير معتاد في النطاقات الفرعية",
 }
 
 
-def _t(s):
-    """fpdf2 core fonts are Latin-1 only."""
+def _latin1(s):
+    """Fallback for fpdf2 core fonts (Latin-1 only) if the bundled font is missing."""
     s = str(s if s is not None else "")
-    for a, b in {"—": "-", "–": "-", "’": "'", "‘": "'", "“": '"', "”": '"', "…": "...", "✓": "+"}.items():
-        s = s.replace(a, b)
+    for a, c in {"—": "-", "–": "-", "’": "'", "‘": "'", "“": '"', "”": '"', "…": "...", "✓": "+"}.items():
+        s = s.replace(a, c)
     return s.encode("latin-1", "replace").decode("latin-1")
 
 
-def render_pdf(b: dict, path):
+def render_pdf(b: dict, path, lang: str = "en"):
+    """One-page report. lang='en' or 'ar' (Arabic, right-to-left)."""
     from fpdf import FPDF
+    from arabic_text import visual
+
+    L10N, rtl = T[lang], lang == "ar"
     pdf = FPDF(format="A4")
     pdf.set_auto_page_break(False)
     pdf.set_margins(14, 12, 14)
+    unicode_font = FONT_REG.exists() and FONT_BOLD.exists()
+    if unicode_font:
+        pdf.add_font("Hirz", "", str(FONT_REG))
+        pdf.add_font("Hirz", "B", str(FONT_BOLD))
+        family = "Hirz"
+    elif rtl:
+        raise RuntimeError("Arabic report needs assets/fonts/DejaVuSans*.ttf")
+    else:
+        family = "Helvetica"
     pdf.add_page()
-    W = pdf.w - pdf.l_margin - pdf.r_margin
-    L = pdf.l_margin
+    W, L = pdf.w - pdf.l_margin - pdf.r_margin, pdf.l_margin
+    clean = (lambda s: str(s if s is not None else "")) if unicode_font else _latin1
 
-    def para(text, size=10, style="", h=5, color=(30, 30, 30)):
-        pdf.set_font("Helvetica", style, size)
+    def font(size, style=""):
+        pdf.set_font(family, "B" if "B" in style else "", size)
+
+    def wrap(text, width):
+        words, lines, cur = [], [], ""
+        for w in clean(text).split(" "):          # hard-split anything wider than a line (long URLs)
+            while pdf.get_string_width(w) > width and len(w) > 1:
+                k = len(w)
+                while k > 1 and pdf.get_string_width(w[:k]) > width:
+                    k -= 1
+                words.append(w[:k]); w = w[k:]
+            words.append(w)
+        for w in words:
+            t = f"{cur} {w}" if cur else w
+            if cur and pdf.get_string_width(visual(t) if rtl else t) > width:
+                lines.append(cur); cur = w
+            else:
+                cur = t
+        return lines + [cur]
+
+    def para(text, size=10, style="", h=5, color=(30, 30, 30), x=None, width=None, ltr=False):
+        font(size, style)
         pdf.set_text_color(*color)
-        pdf.set_x(L)
-        pdf.multi_cell(W, h, _t(text))
-        pdf.set_x(L)
+        x, width = (L if x is None else x), (W if width is None else width)
+        y = pdf.get_y()
+        for line in wrap(text, width):
+            pdf.set_xy(x, y)
+            if rtl and not ltr:
+                pdf.cell(width, h, visual(line), align="R")
+            else:
+                pdf.cell(width, h, line)
+            y += h
+        pdf.set_xy(L, y)
 
-    word, rgb, meaning = VERDICT_TEXT.get(b.get("verdict"), VERDICT_TEXT["unknown"])
+    v = b.get("verdict") if b.get("verdict") in VERDICT_COLOR else "unknown"
+    vcol = VERDICT_COLOR[v]
 
-    # header band
-    pdf.set_fill_color(*rgb)
-    pdf.rect(0, 0, pdf.w, 34, "F")
-    pdf.set_xy(L, 7)
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Helvetica", "B", 26)
-    pdf.cell(W * 0.62, 12, _t(word))
-    pdf.set_font("Helvetica", "B", 18)
-    pdf.cell(W * 0.38, 12, _t(f"Risk score {b.get('score', '-')}/100"), align="R")
-    pdf.set_xy(L, 21)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.cell(W, 6, _t(f"Hirz evidence report  {b['evidence_id']}   captured {b['captured_at']} UTC"))
-    pdf.set_xy(L, 40)
+    # ---- header: navy band with the Hirz logo, verdict in its colour
+    pdf.set_fill_color(*NAVY)
+    pdf.rect(0, 0, pdf.w, 38, "F")
+    pdf.set_fill_color(*vcol)
+    pdf.rect(0, 38, pdf.w, 2.5, "F")
+    logo_h = 32
+    if LOGO.exists():
+        from PIL import Image
+        with Image.open(LOGO) as im:
+            logo_w = logo_h * im.width / im.height
+        pdf.image(str(LOGO), x=(pdf.w - pdf.r_margin - logo_w) if rtl else L, y=3, w=logo_w, h=logo_h)
+    else:
+        logo_w = 0
+    tx, tw = (L, W - logo_w - 6) if rtl else (L + logo_w + 6, W - logo_w - 6)
+    align = "L" if rtl else "R"          # text sits on the side away from the logo
+    word = L10N["verdict"][v]
+    font(24, "B"); pdf.set_text_color(*vcol); pdf.set_xy(tx, 6)
+    pdf.cell(tw, 12, visual(word) if rtl else clean(word), align=align)
+    font(13, "B"); pdf.set_text_color(255, 255, 255); pdf.set_xy(tx, 19)
+    score_txt = f"{L10N['score']} {b.get('score', '-')}/100"
+    pdf.cell(tw, 7, visual(score_txt) if rtl else clean(score_txt), align=align)
+    font(8); pdf.set_text_color(190, 200, 215); pdf.set_xy(tx, 28)
+    sub = f"{L10N['title']}  {b['evidence_id']}  ·  {L10N['captured']} {b['captured_at']} UTC"
+    pdf.cell(tw, 5, visual(sub) if rtl else clean(sub), align=align)
+    pdf.set_xy(L, 46)
 
-    para("Link examined", 9, "B", 5, (90, 90, 90))
-    para(b.get("url"), 11, "B", 5.5)
+    # ---- body
+    para(L10N["link"], 9, "B", 5, (90, 90, 90))
+    para(b.get("url"), 11, "B", 5.5, ltr=True) if not rtl else para(b.get("url"), 11, "B", 5.5)
     if b.get("host"):
-        para(f"Real domain: {b.get('reg_domain')}   (full host: {b.get('host')})", 9, "", 5, (70, 70, 70))
+        para(f"{L10N['real']}: {b.get('reg_domain')}   ({L10N['full']}: {b.get('host')})", 9, "", 5, (70, 70, 70))
     pdf.ln(2)
-    para(meaning, 11, "", 5.5)
+    para(L10N["meaning"][v], 11, "", 5.5)
     pdf.ln(2)
 
-    para("Why it was flagged", 12, "B", 6)
+    para(L10N["why"], 12, "B", 6)
     reasons = b.get("reasons") or []
     if not reasons:
-        para("No specific warning signs were reported.", 10)
+        para(L10N["none"], 10)
     for r in reasons:
-        mark = "+" if r.get("direction") == "safe" else "-"
-        para(f" {mark}  {r.get('text') or r.get('code')}", 11, "", 6)
+        mark = "✓" if r.get("direction") == "safe" else "•"
+        text = (REASON_AR.get(r.get("code")) if rtl else None) or r.get("text") or r.get("code")
+        para(f"{mark}  {text}", 11, "", 6)
     pdf.ln(2)
 
-    # screenshot
-    para("Screenshot", 12, "B", 6)
+    para(L10N["shot"], 12, "B", 6)
     shot = b.get("screenshot_path")
     if shot and pathlib.Path(shot).exists():
-        y = pdf.get_y()
-        pdf.image(shot, x=L, y=y, w=W * 0.55, h=62, keep_aspect_ratio=True)
+        y, sw = pdf.get_y(), W * 0.55
+        pdf.image(shot, x=(L + W - sw) if rtl else L, y=y, w=sw, h=62, keep_aspect_ratio=True)
         pdf.set_xy(L, y + 64)
-        para(b.get("screenshot_note"), 8, "I", 4, (90, 90, 90))
+        para(L10N.get("shot_ok") if rtl else b.get("screenshot_note"), 8, "", 4, (90, 90, 90))
     else:
-        para(b.get("screenshot_note") or "No screenshot captured.", 9, "I", 5, (90, 90, 90))
+        para(L10N["noshot"] or b.get("screenshot_note") or "No screenshot captured.", 9, "", 5, (90, 90, 90))
     pdf.ln(2)
 
-    # takedown
-    para("Where to report it (most effective first)", 12, "B", 6)
+    para(L10N["report"], 12, "B", 6)
     for t in b.get("takedown") or []:
         if t.get("rank") == 4 and not t.get("applies"):
             continue
-        bits = [t.get("name"), t.get("email"), t.get("phone"), t.get("url"), t.get("note")]
-        para(f"{t['rank']}. {t['target']}: " + "  ".join(x for x in bits if x), 9, "", 4.6)
+        name = t["target"]
+        if rtl:
+            key = "cf" if "Cloudflare" in name else ("host" if t["rank"] == 2 else t["rank"])
+            name = L10N["targets"].get(key, name)
+        note = L10N["notes"].get(t.get("note"), t.get("note")) if rtl else t.get("note")
+        bits = [t.get("name") if t["rank"] in (1, 2) else "", t.get("email"), t.get("phone"), t.get("url"), note]
+        para(f"{t['rank']}. {name}: " + "  ".join(x for x in bits if x), 9, "", 4.6)
     pdf.ln(2)
 
-    # technical appendix
+    # ---- technical appendix (always English: identifiers, hashes, dates)
     pdf.set_draw_color(200, 200, 200)
     pdf.line(L, pdf.get_y(), L + W, pdf.get_y())
     pdf.ln(1.5)
-    para("Technical appendix", 10, "B", 5)
+    para(L10N["appendix"], 10, "B", 5)
     reg, cert, host = b.get("registration") or {}, b.get("certificate") or {}, b.get("hosting") or {}
     lines = []
     if reg.get("found"):
@@ -408,15 +534,16 @@ def render_pdf(b: dict, path):
     chain = b.get("redirect_chain") or []
     lines.append("Redirects: " + (" -> ".join(f"{c['url']} [{c['status']}]" for c in chain[:5]) or "none recorded")
                  + (f"; {b['page_note']}" if b.get("page_note") else ""))
+    lines.append(f"Screenshot: {b.get('screenshot_note') or '-'}")
     lines.append(f"Page HTML SHA-256: {b.get('html_sha256') or 'not captured'}")
     if b.get("screenshot_sha256"):
         lines.append(f"Screenshot SHA-256: {b['screenshot_sha256']}")
     lines.append(f"Checked {b.get('checked_at')}; evidence captured {b.get('captured_at')} (UTC)")
     lines.append(f"Bundle SHA-256 (chain of custody, over the canonical JSON of all other fields): {b['bundle_sha256']}")
     for line in lines:
-        para(line, 7.5, "", 3.8, (60, 60, 60))
-    para("Risk assessments are advisory and are not proof of fraud. Verify with "
-         "'python evidence.py --verify <file>.json'.", 7.5, "I", 3.8, (110, 110, 110))
+        para(line, 7.5, "", 3.8, (60, 60, 60), ltr=True)
+    para(L10N["disclaimer"], 7.5, "", 3.8, (110, 110, 110))
+    para("Verify: python evidence.py --verify <file>.json", 7, "", 3.6, (130, 130, 130), ltr=True)
     pdf.output(str(path))
     return str(path)
 
@@ -447,10 +574,11 @@ def main():
     OUT.mkdir(exist_ok=True)
     jpath = OUT / f"{b['evidence_id']}.json"
     jpath.write_text(json.dumps(b, indent=2, ensure_ascii=False), "utf-8")
-    ppath = render_pdf(b, OUT / f"{b['evidence_id']}.pdf")
+    ppath = render_pdf(b, OUT / f"{b['evidence_id']}.pdf", "en")
+    ppath_ar = render_pdf(b, OUT / f"{b['evidence_id']}_ar.pdf", "ar")
     reg = b["takedown"][0]
     print(f"{b['verdict'].upper()} ({b['score']}/100)  {b['url']}")
-    print(f"  JSON  {jpath}\n  PDF   {ppath}")
+    print(f"  JSON  {jpath}\n  PDF   {ppath}  (English)\n  PDF   {ppath_ar}  (Arabic)")
     print(f"  registrar abuse: {reg['name']}  {reg.get('email') or reg.get('note')}")
     print(f"  screenshot: {b['screenshot_path'] or b['screenshot_note']}")
     print(f"  bundle_sha256 {b['bundle_sha256']}  (verify: python evidence.py --verify {jpath})")
