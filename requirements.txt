@@ -6,9 +6,14 @@ uvicorn[standard]>=0.27
 pydantic>=2.6
 httpx>=0.27
 
-# the model: joblib loads a LightGBM booster, so lightgbm must be importable
+# The model. data/model.pkl is an LGBMClassifier whose booster string says
+# version=v4, so any lightgbm 4.x reads it and 5.x is not assumed to. The pickle
+# also carries a scikit-learn LabelEncoder written by 1.9.1 and imports
+# sklearn.preprocessing._label, so scikit-learn is needed to LOAD the model, not
+# only to train it: without it the API cannot start at all.
 joblib>=1.3
-lightgbm>=4.3
+lightgbm>=4.3,<5
+scikit-learn==1.9.1
 numpy>=1.26
 pandas>=2.2
 
